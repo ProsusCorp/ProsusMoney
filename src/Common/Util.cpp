@@ -305,9 +305,11 @@ std::string get_nix_version_display_string()
 #ifdef MAC_OSX
     // Mac
     pathRet /= "Library/Application Support";
-    config_folder =  "blockchain";
+//  config_folder =  (pathRet + "/" + CryptoNote::CRYPTONOTE_NAME);
+    config_folder = "blockchain";
 #else
     // Unix
+//  config_folder = (pathRet + "/." + CryptoNote::CRYPTONOTE_NAME);
     config_folder = "blockchain";
 #endif
 #endif
