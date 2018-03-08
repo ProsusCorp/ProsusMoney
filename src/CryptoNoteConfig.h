@@ -109,6 +109,9 @@ const std::initializer_list<const char*> SEED_NODES = {
   "209.141.55.211:16180",
   "198.98.51.186:16180",
   "prosus.redirectme.net:16180"
+  "prosus1.bericul.com:16180"
+  "prosus2.bericul.com:16180"
+	  
 };
 
 struct CheckpointData {
@@ -124,6 +127,8 @@ __attribute__((unused))
 // {<block height>, "<block hash>"},
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
 	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" },
+	{ 169172, "20847dd4713fda0f56250731ec9f1d037696aea2a3c0991f5a2a071b7c3fc1ce" },
+	
 };
 } // www.ProsusCorp.com
 
