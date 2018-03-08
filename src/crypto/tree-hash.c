@@ -1,6 +1,7 @@
 // Copyright (c) 2011-2016 The Cryptonote developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
@@ -16,42 +17,7 @@
 #endif
 
 /*** 
-* Round to power of two, for count>=3 and for count being not too large (as reasonable for tree hash calculations)
-*/
-size_t tree_hash_cnt(size_t count) {
-	// This algo has some bad history but all we are doing is 1 << floor(log2(count))
-	// There are _many_ ways to do log2, for some reason the one selected was the most obscure one,
-	// and fixing it made it even more obscure.
-	//
-	// Iterative method implemented below aims for clarity over speed, if performance is needed
-	// then my advice is to use the BSR instruction on x86
-	//
-	// All the paranoid asserts have been removed since it is trivial to mathematically prove that
-	// the return will always be a power of 2.
-	// Problem space has been defined as 3 <= count <= 2^28. Of course quarter of a billion transactions
-	// is not a sane upper limit for a block, so there will be tighter limits in other parts of the code
 
-	assert( count >= 3 ); // cases for 0,1,2 are handled elsewhere
-	assert( count <= 0x10000000 ); // sanity limit to 2^28, MSB=1 will cause an inf loop
-
-	size_t pow = 2;
-	while(pow < count) pow <<= 1;
-	return pow >> 1;
-}
-
-void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
-// The blockchain block at height 202612 http://monerochain.info/block/bbd604d2ba11ba27935e006ed39c9bfdd99b76bf4a50654bc1e1e61217962698
-// contained 514 transactions, that triggered bad calculation of variable "cnt" in the original version of this function
-// as from CryptoNote code.
-//
-// This bug applies to all CN altcoins.
-//
-// Mathematical bug here was first published on 14:45:34 (GMT+2) 2014-09-04 by Rafal Freeman <rfree>
-// https://github.com/rfree2monero/bitmonero/commit/b417abfb7a297d09f1bbb6de29030f8de9952ac8
-// and soon also applied to CryptoNote (15:10 GMT+2), and BoolBerry used not fully correct work around:
-// the work around of sizeof(size_t)*8 or <<3 as used before in 2 coins and in BBL later was blocking
-// exploitation on normal platforms, how ever we strongly recommend the following fix because it removes
-// mistake in mathematical formula.
 
   assert(count > 0);
   if (count == 1) {
@@ -65,7 +31,6 @@ void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
 
     char (*ints)[HASH_SIZE];
     size_t ints_size = cnt * HASH_SIZE;
-    ints = alloca(ints_size); 	memset( ints , 0 , ints_size);  // allocate, and zero out as extra protection for using uninitialized mem
 
     memcpy(ints, hashes, (2 * cnt - count) * HASH_SIZE);
 
