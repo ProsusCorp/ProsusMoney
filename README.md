@@ -6,7 +6,7 @@
 ![Release](https://img.shields.io/github/release/ProsusCorp/prosus.svg?style=flat-square)
 ![Downloads](https://img.shields.io/github/downloads/ProsusCorp/prosus/latest/total.svg)
 
-<img src="http://prosus.money/wp-content/uploads/2018/02/splash.png">
+<img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
 
 Prosus was created in Chile (2016) as a means of payment, focused on educating users without technical knowledge. It requires few resources to function. This project promote altruism as the world future economy.
 
