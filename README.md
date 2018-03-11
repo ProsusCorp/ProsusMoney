@@ -17,13 +17,14 @@ The Prosus blockchain is engaged in research and development: Internet of things
 ## 💾 Install on Ubuntu 14 
 
 
-```bash
-$ apt-get update
-$ apt-get upgrade
-$ sudo apt-get install build-essential git cmake libboost1.55-all-dev
-$ git clone https://github.com/ProsusCorp/prosus
-$ cd prosus
-$ make
+```
+(sudo)
+apt-get update
+apt-get upgrade
+apt-get install build-essential git cmake libboost1.55-all-dev
+git clone https://github.com/ProsusCorp/prosus
+cd prosus
+make
 ```
 
 ## Web sites
