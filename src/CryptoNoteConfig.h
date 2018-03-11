@@ -10,9 +10,9 @@
 namespace CryptoNote {
 namespace parameters {
 
-const uint64_t CRYPTONOTE_MAX_BLOCK_NUMBER                   = 500000000;
-const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                = 500000000;
-const size_t   CRYPTONOTE_MAX_TX_SIZE                        = 1000000000;
+const uint64_t CRYPTONOTE_MAX_BLOCK_NUMBER                   = 50000000; // default %10
+const size_t   CRYPTONOTE_MAX_BLOCK_BLOB_SIZE                = 5000000000; // default x10
+const size_t   CRYPTONOTE_MAX_TX_SIZE                        = 10000000000; // default x10
 // Currency-specific address prefix ( https://cryptonotestarter.org/tools.html )
 const uint64_t CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX       = 0x321589488; // Prosus
 // Choose maturity period for your currency
@@ -106,12 +106,10 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1
 
 // Add here your network seed nodes
 const std::initializer_list<const char*> SEED_NODES = {
-  "209.141.55.211:16180",
-  "198.98.51.186:16180",
-  "prosus.redirectme.net:16180"
-  "prosus1.bericul.com:16180"
-  "prosus2.bericul.com:16180"
-	  
+  "200.42.190.22:16180",
+  "prosus.redirectme.net:16180",
+  "prosus1.bericul.com:16180",
+  "prosus2.bericul.com:16180"	  
 };
 
 struct CheckpointData {
@@ -126,9 +124,8 @@ __attribute__((unused))
 // You may add here other checkpoints using the following format:
 // {<block height>, "<block hash>"},
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
+	{ 162224, "09d02f60f47654ca2a199f2708c1895e964685c6ca556ecb43cf2ad30e495bad" },
 	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" },
-	{ 169172, "20847dd4713fda0f56250731ec9f1d037696aea2a3c0991f5a2a071b7c3fc1ce" },
-	
 };
 } // www.ProsusCorp.com
 
