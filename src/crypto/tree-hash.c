@@ -16,9 +16,6 @@
  #include <stdlib.h>
 #endif
 
-/*** 
-
-
   assert(count > 0);
   if (count == 1) {
     memcpy(root_hash, hashes, HASH_SIZE);
