@@ -1,10 +1,10 @@
 
 # PROSUS
 
-[![GitHub Issues](https://img.shields.io/github/issues/ProsusCorp/prosus.svg?style=flat-square)](https://github.com/ProsusCorp/prosus/issues)
-![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg?style=flat-square)
-![Release](https://img.shields.io/github/release/ProsusCorp/prosus.svg?style=flat-square)
-![Downloads](https://img.shields.io/github/downloads/ProsusCorp/prosus/latest/total.svg)
+[![GitHub Issues](https://img.shields.io/github/issues/ProsusCorp/prosus.svg?style=plastic)](https://github.com/ProsusCorp/prosus/issues)
+![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg?style=plastic)
+![Release](https://img.shields.io/github/release/ProsusCorp/prosus.svg?style=plastic)
+![Downloads](https://img.shields.io/github/downloads/ProsusCorp/prosus/latest/total.svg?style=plastic)
 
 <img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
 
