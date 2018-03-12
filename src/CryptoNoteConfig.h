@@ -124,8 +124,9 @@ __attribute__((unused))
 // You may add here other checkpoints using the following format:
 // {<block height>, "<block hash>"},
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
+	{ 159787, "a44d0ac4e62b9c1e43c1264ae6edab44995bebf28bbbc838734da8713daf146f" },
 	{ 162224, "09d02f60f47654ca2a199f2708c1895e964685c6ca556ecb43cf2ad30e495bad" },
-	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" },
+	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }
 };
 } // www.ProsusCorp.com
 
