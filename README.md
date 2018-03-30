@@ -27,7 +27,7 @@ make
 ```
 
 ## Web sites
-* [Release](http://prosus.money)
+* [Home](http://prosus.money)
 * [Pool](http://prosus1.bericul.com)
 * [Market](https://altrui.exchange)
 * [RTD](http://prosuscorp.com)
