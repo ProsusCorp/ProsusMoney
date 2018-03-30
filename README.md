@@ -37,5 +37,5 @@ make
 * [Facebook](https://www.facebook.com/groups/prosus.money)
 * [Twitter](https://twitter.com/ProsusCorp)
 * [Telegram](https://t.me/prosus_money)
-* [Telegram (Español)](https://t.me/prosus)
+* [Telegram (español)](https://t.me/prosus)
 
