@@ -14,9 +14,8 @@ Mnemotechnic for Prosus Currency is **xPR**.
 
 The Prosus blockchain is engaged in research and development: Internet of things, smart contracts, power-supply.
 
+
 ## 💾 Install on Ubuntu 14 
-
-
 ```
 (sudo)
 apt-get update
