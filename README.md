@@ -28,7 +28,7 @@ make
 
 ## Web sites
 * [Home](http://prosus.money)
-* [Pool](http://prosus1.bericul.com)
+* [Pool](http://200.42.190.22)
 * [Market](https://altrui.exchange)
 * [RTD](http://prosuscorp.com)
 
