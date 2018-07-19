@@ -18,15 +18,16 @@ const size_t   CRYPTONOTE_MINED_MONEY_UNLOCK_WINDOW          = 60;
 const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT            = 60 * 60 * 2;
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 60;
 
-const uint64_t MONEY_SUPPLY                                  = (uint64_t)(-1);
+// PROSUS MONEY SUPPLY =>  184'467'440 coins, 11 decimals
+const uint64_t MONEY_SUPPLY                                  = (uint64_t)(-1); // atomics units
+const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 11;
+
 const unsigned EMISSION_SPEED_FACTOR                         = 18;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW               = 100;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE     = 10000; //size of block (bytes) after which reward for block calculated using block size
 const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE        = 600;
-
-const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 8;
 
 const uint64_t MINIMUM_FEE                                   = 100000;
 const uint64_t DEFAULT_DUST_THRESHOLD                        = MINIMUM_FEE;
@@ -63,7 +64,6 @@ const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json"
 } // parameters
 
 const char     CRYPTONOTE_NAME[]                             = "prosus";
-const char     GENESIS_COINBASE_TX_HEX[]                     = "013c01ff0001ffffffffffff01029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071210192688b4c55fbd51d85e136d3609c2a20471467a9807facd92a2bc55cb82cb69d";
 
 const uint8_t  CURRENT_TRANSACTION_VERSION                   =  1;
 const uint8_t  BLOCK_MAJOR_VERSION_1                         =  1;
@@ -93,8 +93,8 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1
 
 const std::initializer_list<const char*> SEED_NODES = {
   "200.42.190.22:16180",
-  "prosus1.bericul.com:16180",
-  "prosus2.bericul.com:16180"	 
+//  "prosus1.bericul.com:16180",
+//  "prosus2.bericul.com:16180"	 
 };
 
 struct CheckpointData {
@@ -107,7 +107,16 @@ __attribute__((unused))
 #endif
 
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
-	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }
+	{   1626, "f791658ada4858dccedd4d2aae0832e77c11d1cbcfa7f9696122738c4d0498a2" }, // cambiamos recompensa
+	{   3150, "02f3c90eea77eece1d4a0beea5b0bcbfd8c9077f5741fea77a5318ca39a859b3" }, // secuestramos red
+	{ 100000, "4e0f584304b0968cff0fe12b949422c08908635c4122ecdee4f052fd5aa90d2a" }, // cien mil
+	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }, // primer stuck, parchamos
+	{ 200000, "b2d0d1d1727240f5c470c06a1a680a61dbad7d5331b2dac78eb194d7bd1288fd" }, // doscientos mil
+	{ 230106, "0b6e77063d90a2ef0bdecbc669ef27d35e7fe4df6c82b63fdbfc78928e3b7151" }, // segundo stuck, parchamos
+//	{ 300000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{ 400000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{ 500000, "0000000000000000000000000000000000000000000000000000000000000000" }
+
 };
 } // www.ProsusCorp.com
 
