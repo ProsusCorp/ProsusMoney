@@ -1,6 +1,6 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #include "Currency.h"
 #include <cctype>
@@ -71,8 +71,8 @@ bool Currency::init() {
 bool Currency::generateGenesisBlock() {
   m_genesisBlock = boost::value_initialized<Block>();
 
-  // Hard code coinbase tx in genesis block, because "tru" generating tx use random, but genesis should be always the same
-  std::string genesisCoinbaseTxHex = GENESIS_COINBASE_TX_HEX;
+// [CryptoNoteConfig.h] const char GENESIS_COINBASE_TX_HEX[] = "013c01ff0001ffffffffffff01029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071210192688b4c55fbd51d85e136d3609c2a20471467a9807facd92a2bc55cb82cb69d";
+  std::string genesisCoinbaseTxHex = "013c01ff0001ffffffffffff01029b2e4c0281c0b02e7c53291a94d1d0cbff8883f8024f5142ee494ffbbd088071210192688b4c55fbd51d85e136d3609c2a20471467a9807facd92a2bc55cb82cb69d";
   BinaryArray minerTxBlob;
 
   bool r =
@@ -480,11 +480,12 @@ CurrencyBuilder::CurrencyBuilder(Logging::ILogger& log) : m_currency(log) {
 
   testnet(false);
 }
-
+// ProsusCorp
 Transaction CurrencyBuilder::generateGenesisTransaction() {
   CryptoNote::Transaction tx;
   CryptoNote::AccountPublicAddress ac = boost::value_initialized<CryptoNote::AccountPublicAddress>();
-  m_currency.constructMinerTx(0, 0, 0, 0, 0, ac, tx); // zero fee in genesis
+//  m_currency.constructMinerTx(0, 0, 0, 0, 0, ac, tx); // zero fee in genesis
+  m_currency.constructMinerTx(0, 0, 0, 0, 0, ac, tx); // comenzar en bloque 3150
 
   return tx;
 }
