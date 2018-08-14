@@ -8,11 +8,9 @@
 
 <img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
 
-Prosus was created in Chile (2016) as a means of payment, focused on educating users without technical knowledge. It requires few resources to function. This project promote altruism as the world future economy.
+Prosus was created in Chile (2016) as a means of payment, and its goal would be to implement the blockchain technology in the Iot of the energy-grid. This project promote altruism as the world future economy.
 
 Mnemotechnic for Prosus Currency is **xPR**.
-
-The Prosus blockchain is engaged in research and development: Internet of things, smart contracts, power-supply.
 
 
 ## 💾 Install on Ubuntu 16 
@@ -23,17 +21,8 @@ apt-get upgrade
 apt-get install build-essential git cmake libboost1.58-all-dev
 git clone https://github.com/ProsusCorp/prosus
 cd prosus
-make -j 4
-```
-
-## 💾 Install on Ubuntu 14 
-```
-(sudo)
-apt-get update
-apt-get upgrade
-apt-get install build-essential git cmake libboost1.55-all-dev
-git clone https://github.com/ProsusCorp/prosus
-cd prosus
+mkdir build && cd build
+cmake ..
 make
 ```
 
