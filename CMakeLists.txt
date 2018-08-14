@@ -1,579 +1,318 @@
-cmake_minimum_required(VERSION 2.8.6)
-if (WIN32)
- option(CMAKE_USE_WIN32_THREADS_INIT "using WIN32 threads" ON)
-endif()
-set(VERSION "0.1")
+cmake_minimum_required(VERSION 2.8)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
-  message(STATUS "Setting default build type: ${CMAKE_BUILD_TYPE}")
-endif()
-string(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE_LOWER)
+include(CryptoNoteWallet.cmake)
+include(QREncode.cmake)
 
-# ARCH defines the target architecture, either by an explicit identifier or
-# one of the following two keywords. By default, ARCH a value of 'native':
-# target arch = host arch, binary is not portable. When ARCH is set to the
-# string 'default', no -march arg is passed, which creates a binary that is
-# portable across processors in the same family as host processor.  In cases
-# when ARCH is not set to an explicit identifier, cmake's builtin is used
-# to identify the target architecture, to direct logic in this cmake script.
-# Since ARCH is a cached variable, it will not be set on first cmake invocation.
-if (NOT ARCH OR ARCH STREQUAL "" OR ARCH STREQUAL "native" OR ARCH STREQUAL "default")
-  set(ARCH_ID "${CMAKE_SYSTEM_PROCESSOR}")
-else()
-  set(ARCH_ID "${ARCH}")
-endif()
-string(TOLOWER "${ARCH_ID}" ARM_ID)
-string(SUBSTRING "${ARM_ID}" 0 3 ARM_TEST)
-if (ARM_TEST STREQUAL "arm")
-  set(ARM 1)
-  string(SUBSTRING "${ARM_ID}" 0 5 ARM_TEST)
-  if (ARM_TEST STREQUAL "armv6")
-    set(ARM6 1)
-  endif()
-  if (ARM_TEST STREQUAL "armv7")
-    set(ARM7 1)
-  endif()
-endif()
+project(${CN_PROJECT_NAME})
 
-if (ARM_ID STREQUAL "aarch64" OR ARM_ID STREQUAL "arm64" OR ARM_ID STREQUAL "armv8-a")
-  set(ARM 1)
-  set(ARM8 1)
-  set(ARCH "armv8-a")
-endif()
+execute_process(COMMAND git log -1 --pretty=format:%h
+WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+OUTPUT_VARIABLE GIT_REVISION)
 
-if(ARCH_ID STREQUAL "ppc64le")
-  set(PPC64LE 1)
-endif()
+set(CRYPTONOTE_LIB cryptonote)
 
-if(WIN32 OR ARM)
-  set(OPT_FLAGS_RELEASE "-O2")
-else()
-  set(OPT_FLAGS_RELEASE "-Ofast")
-endif()
+include_directories(${CMAKE_BINARY_DIR}
+    src
+    cryptonote/external
+    cryptonote/include
+    cryptonote/src
+    libqrencode)
 
-# BUILD_TAG is used to select the build type to check for a new version
-if(BUILD_TAG)
-  message(STATUS "Building build tag ${BUILD_TAG}")
-  add_definitions("-DBUILD_TAG=${BUILD_TAG}")
-else()
-  message(STATUS "Building without build tag")
-endif()
+find_package(Qt5Gui REQUIRED)
+find_package(Qt5Widgets REQUIRED)
+find_package(Qt5Network REQUIRED)
 
-set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG ${OPT_FLAGS_RELEASE}")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG ${OPT_FLAGS_RELEASE}")
-
-list(INSERT CMAKE_MODULE_PATH 0
-  "${CMAKE_SOURCE_DIR}/cmake")
-
-if (NOT DEFINED ENV{DEVELOPER_LOCAL_TOOLS})
-  message(STATUS "Could not find DEVELOPER_LOCAL_TOOLS in env (not required)")
-  set(BOOST_IGNORE_SYSTEM_PATHS_DEFAULT OFF)
-elseif ("$ENV{DEVELOPER_LOCAL_TOOLS}" EQUAL 1)
-  message(STATUS "Found: env DEVELOPER_LOCAL_TOOLS = 1")
-  set(BOOST_IGNORE_SYSTEM_PATHS_DEFAULT ON)
-else()
-  message(STATUS "Found: env DEVELOPER_LOCAL_TOOLS = 0")
-  set(BOOST_IGNORE_SYSTEM_PATHS_DEFAULT OFF)
-endif()
-
-message(STATUS "BOOST_IGNORE_SYSTEM_PATHS defaults to ${BOOST_IGNORE_SYSTEM_PATHS_DEFAULT}")
-option(BOOST_IGNORE_SYSTEM_PATHS "Ignore boost system paths for local boost installation" ${BOOST_IGNORE_SYSTEM_PATHS_DEFAULT})
-
-
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-# set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
-set(CMAKE_CONFIGURATION_TYPES Debug RelWithDebInfo Release CACHE TYPE INTERNAL)
-set(CMAKE_SKIP_INSTALL_RULES ON)
-set(CMAKE_SKIP_PACKAGE_ALL_DEPENDENCY ON)
-set(CMAKE_SUPPRESS_REGENERATION ON)
-# enable_testing()
-# copy CTestCustom.cmake to build dir to disable long running tests in 'make test'
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_CURRENT_BINARY_DIR})
-
-project(ParsiCoin)
-
-include_directories(include src external "${CMAKE_CURRENT_BINARY_DIR}/version")  
-
-# Check whether we're on a 32-bit or 64-bit system
-if(CMAKE_SIZEOF_VOID_P EQUAL "8")
-  set(DEFAULT_BUILD_64 ON)
-else()
-  set(DEFAULT_BUILD_64 OFF)
-endif()
-option(BUILD_64 "Build for 64-bit? 'OFF' builds for 32-bit." ${DEFAULT_BUILD_64})
-
-if(BUILD_64)
-  set(ARCH_WIDTH "64")
-else()
-  set(ARCH_WIDTH "32")
-endif()
-message(STATUS "Building for a ${ARCH_WIDTH}-bit system")
-
-# Check if we're on FreeBSD so we can exclude the local miniupnpc (it should be installed from ports instead)
-# CMAKE_SYSTEM_NAME checks are commonly known, but specifically taken from libsdl's CMakeLists
-if(CMAKE_SYSTEM_NAME MATCHES "kFreeBSD.*|FreeBSD")
-  set(FREEBSD TRUE)
-endif()
-
-# Check if we're on DragonFly BSD. See the README.md for build instructions.
-if(CMAKE_SYSTEM_NAME MATCHES "DragonFly.*")
-  set(DRAGONFLY TRUE)
-endif()
-
-# Check if we're on OpenBSD. See the README.md for build instructions.
-if(CMAKE_SYSTEM_NAME MATCHES "kOpenBSD.*|OpenBSD.*")
-  set(OPENBSD TRUE)
-endif()
-
-# TODO: check bsdi, NetBSD, to see if they need the same FreeBSD changes
-#
-# elseif(CMAKE_SYSTEM_NAME MATCHES "kNetBSD.*|NetBSD.*")
-#   set(NETBSD TRUE)
-# elseif(CMAKE_SYSTEM_NAME MATCHES ".*BSDI.*")
-#   set(BSDI TRUE)
-
-#include_directories(include src contrib/epee/include external "${CMAKE_BINARY_DIR}/version")
-
-if(APPLE)
-  include_directories(SYSTEM /usr/include/malloc)
-  if(POLICY CMP0042)
-    cmake_policy(SET CMP0042 NEW)
-  endif()
-  enable_language(ASM)
-endif()
-
-if(MSVC OR MINGW)
-  set(DEFAULT_STATIC true)
-else()
-  set(DEFAULT_STATIC false)
-endif()
-
-if(MSVC)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Windows)
-elseif(APPLE)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/OSX)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Posix)
-elseif(ANDROID)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Android)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Posix)
-else()
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Linux)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src/Platform/Posix)
-endif()
-
-option(STATIC "Link libraries statically" ${DEFAULT_STATIC})
-set(STATIC ${MSVC} CACHE BOOL "Link libraries statically")
-
-# This is a CMake built-in switch that concerns internal libraries
-if (NOT DEFINED BUILD_SHARED_LIBS AND NOT STATIC AND CMAKE_BUILD_TYPE_LOWER STREQUAL "debug")
-    set(BUILD_SHARED_LIBS ON)
-endif()
-
-if (BUILD_SHARED_LIBS)
-  message(STATUS "Building internal libraries with position independent code")
-  set(PIC_FLAG "-fPIC")
-  add_definitions("-DBUILD_SHARED_LIBS")
-else()
-  message(STATUS "Building internal libraries as static")
-endif()
-
-if(MINGW)
-  string(REGEX MATCH "^[^/]:/[^/]*" msys2_install_path "${CMAKE_C_COMPILER}")
-  message(STATUS "MSYS location: ${msys2_install_path}")
-  set(CMAKE_INCLUDE_PATH "${msys2_install_path}/mingw${ARCH_WIDTH}/include")
-  # This is necessary because otherwise CMake will make Boost libraries -lfoo
-  # rather than a full path. Unfortunately, this makes the shared libraries get
-  # linked due to a bug in CMake which misses putting -static flags around the
-  # -lfoo arguments.
-  set(DEFLIB ${msys2_install_path}/mingw${ARCH_WIDTH}/lib)
-  list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_DIRECTORIES ${DEFLIB})
-  list(REMOVE_ITEM CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES ${DEFLIB})
-endif()
-
-if(STATIC)
-  if(MSVC)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .lib .dll.a .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  else()
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a ${CMAKE_FIND_LIBRARY_SUFFIXES})
-  endif()
-endif()
-
-if (UNIX AND NOT APPLE)
-  # Note that at the time of this writing the -Wstrict-prototypes flag added below will make this fail
-  set(THREADS_PREFER_PTHREAD_FLAG ON)
-  find_package(Threads)
-endif()
-
-add_subdirectory(external)
-
-# Final setup for miniupnpc
-if(STATIC OR IOS)
- #if(UPNP_STATIC OR IOS)
-  add_definitions("-DUPNP_STATIC")
- else()
-  add_definitions("-DUPNP_DYNAMIC")
-  include_directories(${UPNP_INCLUDE})
- endif()
-
-if(MSVC)
-  add_definitions("/bigobj /MP /W3 /GS- /D_CRT_SECURE_NO_WARNINGS /wd4996 /wd4345 /D_WIN32_WINNT=0x0600 /DWIN32_LEAN_AND_MEAN /DGTEST_HAS_TR1_TUPLE=0 /D_VARIADIC_MAX=8 /D__SSE4_1__")
-  #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /STACK:10485760")
-  if(STATIC)    
-	foreach(VAR CMAKE_C_FLAGS_DEBUG CMAKE_CXX_FLAGS_DEBUG CMAKE_C_FLAGS_RELWITHDEBINFO CMAKE_CXX_FLAGS_RELWITHDEBINFO CMAKE_C_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELEASE)
-      string(REPLACE "/MD" "/MT" ${VAR} "${${VAR}}")
-    endforeach()
-  endif()
-  include_directories(SYSTEM ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/msc)
-else()
-  include(TestCXXAcceptsFlag)
-  set(ARCH native CACHE STRING "CPU to build for: -march value or default to not pass -march at all")
-  message(STATUS "Building on ${CMAKE_SYSTEM_PROCESSOR} for ${ARCH}")
-  if("${ARCH}" STREQUAL "default")
-    set(ARCH_FLAG "")
-  elseif(PPC64LE)
-    set(ARCH_FLAG "-mcpu=${ARCH}")
-  else()
-    set(ARCH_FLAG "-march=${ARCH}")
-  endif()
-  set(WARNINGS "-Wall -Wextra -Wpointer-arith -Wundef -Wvla -Wwrite-strings -Wno-error=extra -Wno-error=unused-function -Wno-error=deprecated-declarations -Wno-error=sign-compare -Wno-error=strict-aliasing -Wno-error=type-limits -Wno-unused-parameter -Wno-error=unused-variable -Wno-error=undef -Wno-error=uninitialized -Wno-error=unused-result")
-  if(NOT MINGW)
-    set(WARNINGS_AS_ERRORS_FLAG "-Werror")
-  endif()
-  if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-    # maybe remove
-    set(WARNINGS "${WARNINGS} -Wno-error=mismatched-tags -Wno-error=null-conversion -Wno-overloaded-shift-op-parentheses -Wno-error=shift-count-overflow -Wno-error=tautological-constant-out-of-range-compare -Wno-error=unused-private-field -Wno-error=unneeded-internal-declaration -Wno-error=unused-function")
-	if(NOT APPLE) 
-		set(WARNINGS "${WARNINGS} -Wno-unused-lambda-capture")
-	endif()
-	# this ^
-	if(ARM)
-      set(WARNINGS "${WARNINGS} -Wno-error=inline-asm")
-    endif()
-  else()
-    set(WARNINGS "${WARNINGS} -Wlogical-op -Wno-error=maybe-uninitialized -Wno-error=clobbered -Wno-error=unused-but-set-variable")
-  endif()
-  if(MINGW)
-    set(WARNINGS "${WARNINGS} -Wno-error=unused-value -Wno-error=unused-but-set-variable")
-    set(MINGW_FLAG "-DWIN32_LEAN_AND_MEAN")
-	set(Boost_THREADAPI win32)
-    include_directories(SYSTEM src/platform/mingw)
-	# mingw doesn't support LTO (multiple definition errors at link time)
-    set(USE_LTO_DEFAULT false)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--stack,10485760")
-	if(NOT BUILD_64)
-      add_definitions(-DWINVER=0x0501 -D_WIN32_WINNT=0x0501)
-    endif()
-  else()
-    set(MINGW_FLAG "")
-  endif()
-  set(C_WARNINGS "-Waggregate-return -Wnested-externs -Wold-style-definition -Wstrict-prototypes")
-  set(CXX_WARNINGS "-Wno-reorder -Wno-missing-field-initializers")
-  try_compile(STATIC_ASSERT_RES "${CMAKE_CURRENT_BINARY_DIR}/static-assert" "${CMAKE_CURRENT_SOURCE_DIR}/utils/test-static-assert.c" COMPILE_DEFINITIONS "-std=c11")
-  if(STATIC_ASSERT_RES)
-    set(STATIC_ASSERT_FLAG "")
-  else()
-    set(STATIC_ASSERT_FLAG "-Dstatic_assert=_Static_assert")
-  endif()
-  
-  try_compile(STATIC_ASSERT_CPP_RES "${CMAKE_CURRENT_BINARY_DIR}/static-assert" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/test-static-assert.cpp" COMPILE_DEFINITIONS "-std=c++11")
-  if(STATIC_ASSERT_CPP_RES)
-    set(STATIC_ASSERT_CPP_FLAG "")
-  else()
-    set(STATIC_ASSERT_CPP_FLAG "-Dstatic_assert=_Static_assert")
-  endif()
-  
-  # With GCC 6.1.1 the compiled binary malfunctions due to aliasing. Until that
-  # is fixed in the code (Issue #847), force compiler to be conservative.
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
-  
-  option(NO_AES "Explicitly disable AES support" ${NO_AES})
-  
-  if(NOT NO_AES AND NOT ARM AND NOT PPC64LE)
-    message(STATUS "AES support enabled")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes")
-  elseif(PPC64LE)
-    message(STATUS "AES support not available on ppc64le")
-  elseif(ARM6)
-    message(STATUS "AES support not available on ARMv6")
-  elseif(ARM7)
-    message(STATUS "AES support not available on ARMv7")
-  elseif(ARM8)
-    CHECK_CXX_ACCEPTS_FLAG("-march=${ARCH}+crypto" ARCH_PLUS_CRYPTO)
-    if(ARCH_PLUS_CRYPTO)
-      message(STATUS "Crypto extensions enabled for ARMv8")
-      set(ARCH_FLAG "-march=${ARCH}+crypto")
-    else()
-      message(STATUS "Crypto extensions unavailable on your ARMv8 device")
-    endif()
-  else()
-    message(STATUS "AES support disabled")
-  endif()
-  
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -D_GNU_SOURCE ${MINGW_FLAG} ${STATIC_ASSERT_FLAG} ${WARNINGS} ${C_WARNINGS} ${ARCH_FLAG} ${PIC_FLAG}")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -D_GNU_SOURCE ${MINGW_FLAG} ${STATIC_ASSERT_CPP_FLAG} ${WARNINGS} ${CXX_WARNINGS} ${ARCH_FLAG} ${PIC_FLAG}")
-
-  # With GCC 6.1.1 the compiled binary malfunctions due to aliasing. Until that
-  # is fixed in the code (Issue #847), force compiler to be conservative.
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing")
-  
-  
-  if(ARM)
-    message(STATUS "Setting FPU Flags for ARM Processors")
-
-    #NB NEON hardware does not fully implement the IEEE 754 standard for floating-point arithmetic
-    #Need custom assembly code to take full advantage of NEON SIMD
-
-    #Cortex-A5/9  -mfpu=neon-fp16
-    #Cortex-A7/15 -mfpu=neon-vfpv4
-    #Cortex-A8    -mfpu=neon
-    #ARMv8  	  -FP and SIMD on by default for all ARM8v-A series, NO -mfpu setting needed
-
-    #For custom -mtune, processor IDs for ARMv8-A series:
-    #0xd04 - Cortex-A35
-    #0xd07 - Cortex-A57
-    #0xd08 - Cortex-A72
-    #0xd03 - Cortex-A73
-
-    if(NOT ARM8)
-      CHECK_CXX_ACCEPTS_FLAG(-mfpu=vfp3-d16 CXX_ACCEPTS_VFP3_D16)
-      CHECK_CXX_ACCEPTS_FLAG(-mfpu=vfp4 CXX_ACCEPTS_VFP4)
-      CHECK_CXX_ACCEPTS_FLAG(-mfloat-abi=hard CXX_ACCEPTS_MFLOAT_HARD)
-      CHECK_CXX_ACCEPTS_FLAG(-mfloat-abi=softfp CXX_ACCEPTS_MFLOAT_SOFTFP)
-    endif()
-
-    if(ARM8)
-      CHECK_CXX_ACCEPTS_FLAG(-mfix-cortex-a53-835769 CXX_ACCEPTS_MFIX_CORTEX_A53_835769)
-      CHECK_CXX_ACCEPTS_FLAG(-mfix-cortex-a53-843419 CXX_ACCEPTS_MFIX_CORTEX_A53_843419)
-    endif()
-
-    if(ARM6)
-      message(STATUS "Selecting VFP for ARMv6")
-      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=vfp")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=vfp")
-    endif(ARM6)
-
-    if(ARM7)
-      if(CXX_ACCEPTS_VFP3_D16 AND NOT CXX_ACCEPTS_VFP4)
-        message(STATUS "Selecting VFP3 for ARMv7")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=vfp3-d16")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=vfp3-d16")
-      endif()
-
-      if(CXX_ACCEPTS_VFP4)
-        message(STATUS "Selecting VFP4 for ARMv7")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfpu=vfp4")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfpu=vfp4")
-      endif()
-
-      if(CXX_ACCEPTS_MFLOAT_HARD)
-        message(STATUS "Setting Hardware ABI for Floating Point")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=hard")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfloat-abi=hard")
-      endif()
-
-      if(CXX_ACCEPTS_MFLOAT_SOFTFP AND NOT CXX_ACCEPTS_MFLOAT_HARD)
-        message(STATUS "Setting Software ABI for Floating Point")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=softfp")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfloat-abi=softfp")
-      endif()
-    endif(ARM7)
-
-    if(ARM8)
-      if(CXX_ACCEPTS_MFIX_CORTEX_A53_835769)
-        message(STATUS "Enabling Cortex-A53 workaround 835769")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfix-cortex-a53-835769")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfix-cortex-a53-835769")
-      endif()
-
-      if(CXX_ACCEPTS_MFIX_CORTEX_A53_843419)
-        message(STATUS "Enabling Cortex-A53 workaround 843419")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfix-cortex-a53-843419")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mfix-cortex-a53-843419")
-      endif()
-    endif(ARM8)
-
-  endif(ARM)
-
-  if(ANDROID AND NOT BUILD_GUI_DEPS STREQUAL "ON" OR IOS)
-    #From Android 5: "only position independent executables (PIE) are supported" 
-    message(STATUS "Enabling PIE executable")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIE")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -DANDROID -DBOOST_COROUTINES_NO_DEPRECATION_WARNING")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_CXX_FLAGS} -fPIE -pie -ldl -pthread")
-  endif()
-
-  if(APPLE)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGTEST_HAS_TR1_TUPLE=0")
-  endif()
-  
-  set(DEBUG_FLAGS "-g3")
-  if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND NOT (CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8))
-    set(DEBUG_FLAGS "-g3 -Og")
-  else()
-    set(DEBUG_FLAGS "-g3 -O0")
-  endif()
-  
-  if(NOT DEFINED USE_LTO_DEFAULT)
-    set(USE_LTO_DEFAULT false)
-  endif()
-  set(USE_LTO ${USE_LTO_DEFAULT} CACHE BOOL "Use Link-Time Optimization (Release mode only)")
-
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # There is a clang bug that does not allow to compile code that uses AES-NI intrinsics if -flto is enabled, so explicitly disable
-    set(USE_LTO false)
-  endif()
-
-  if(USE_LTO)
-    set(RELEASE_FLAGS "${RELEASE_FLAGS} -flto")
-    if(STATIC)
-      set(RELEASE_FLAGS "${RELEASE_FLAGS} -ffat-lto-objects")
-    endif()
-    # Since gcc 4.9 the LTO format is non-standard (slim), so we need the gcc-specific ar and ranlib binaries
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.0) AND NOT OPENBSD AND NOT DRAGONFLY)
-      # When invoking cmake on distributions on which gcc's binaries are prefixed
-      # with an arch-specific triplet, the user must specify -DCHOST=<prefix>
-      if (DEFINED CHOST)
-        set(CMAKE_AR "${CHOST}-gcc-ar")
-        set(CMAKE_RANLIB "${CHOST}-gcc-ranlib")
-      else()
-        set(CMAKE_AR "gcc-ar")
-        set(CMAKE_RANLIB "gcc-ranlib")
-      endif()
-    endif()
-  endif()
-
-  set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${DEBUG_FLAGS}")
-  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${DEBUG_FLAGS}")
-  set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} ${RELEASE_FLAGS}")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${RELEASE_FLAGS}")
-
-  if(STATIC)
-    # STATIC already configures most deps to be linked in statically,
-    # here we make more deps static if the platform permits it
-    if (MINGW)
-      # On Windows, this is as close to fully-static as we get:
-      # this leaves only deps on /c/Windows/system32/*.dll
-      set(STATIC_FLAGS "-static")
-    elseif (NOT (APPLE OR FREEBSD OR OPENBSD OR DRAGONFLY))
-      # On Linux, we don't support fully static build, but these can be static
-      set(STATIC_FLAGS "-static-libgcc -static-libstdc++")
-    endif()
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${STATIC_FLAGS} ")
-  endif()
-endif()
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux" AND NOT ANDROID)
-    set(CMAKE_EXE_LINKER_FLAGS "-pthread")
-	set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_STATIC_RUNTIME ON)
-endif()
-
-if (${BOOST_IGNORE_SYSTEM_PATHS} STREQUAL "ON")
-  set(Boost_NO_SYSTEM_PATHS TRUE)
-endif()
-
-set(OLD_LIB_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-if(STATIC)
-  if(MINGW)
-    set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
-  endif()
-
-  set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS ON)
+if(WIN32)
+  set(Boost_USE_STATIC_RUNTIME OFF)
+else(WIN32)
   set(Boost_USE_STATIC_RUNTIME ON)
-endif()
-find_package(Boost 1.55 QUIET REQUIRED COMPONENTS system filesystem thread date_time chrono regex serialization program_options coroutine context atomic)
+endif(WIN32)
 
-set(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_LIB_SUFFIXES})
-if(NOT Boost_FOUND)
-  die("Could not find Boost libraries, please make sure you have installed Boost or libboost-all-dev (1.58) or the equivalent")
-elseif(Boost_FOUND)
-  message(STATUS "Found Boost Version: ${Boost_VERSION}")
-endif()
+find_package(Boost 1.55 REQUIRED COMPONENTS date_time filesystem program_options regex serialization system thread chrono)
+if ((${Boost_MAJOR_VERSION} EQUAL 1) AND (${Boost_MINOR_VERSION} EQUAL 54))
+	message(SEND_ERROR "Boost version 1.54 is unsupported, more details are available here http://goo.gl/RrCFmA")
+endif ()
 
-if(MINGW)
-  set(Boost_LIBRARIES "${Boost_LIBRARIES};ws2_32;mswsock;iphlpapi")
-elseif(APPLE OR OPENBSD OR ANDROID)
-  set(Boost_LIBRARIES "${Boost_LIBRARIES}")
-elseif(NOT MSVC)
-  set(Boost_LIBRARIES "${Boost_LIBRARIES};rt")
-endif()
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
 
-include_directories(SYSTEM ${Boost_INCLUDE_DIRS})
-if(MINGW)
-  set(EXTRA_LIBRARIES mswsock;ws2_32;iphlpapi)
-elseif(APPLE OR OPENBSD OR ANDROID)
-  set(EXTRA_LIBRARIES "")
-elseif(FREEBSD)
-  set(EXTRA_LIBRARIES execinfo)
-elseif(DRAGONFLY)
-  find_library(COMPAT compat)
-  set(EXTRA_LIBRARIES execinfo ${COMPAT})
-elseif(NOT MSVC)
-  find_library(RT rt)
-  set(EXTRA_LIBRARIES ${RT})
-endif()
+set(VERSION "")
+configure_file("cryptonote/src/version.h.in" "version.h")
+configure_file("src/CryptoNoteWalletConfig.h.in" "CryptoNoteWalletConfig.h")
 
-list(APPEND EXTRA_LIBRARIES ${CMAKE_DL_LIBS})
+add_definitions(-DVERSION=\"${CN_VERSION}\")
+add_definitions(-DGIT_REVISION=\"${GIT_REVISION}\")
 
-if(ANDROID AND CMAKE_C_COMPILER_ID STREQUAL "Clang")
-  set(ATOMIC ${BOOST_LIBRARYDIR}/libboost_atomic.a)
-  set(THREAD ${BOOST_LIBRARYDIR}/libboost_thread.a)
-  find_library(THREAD thread)
-  list(APPEND EXTRA_LIBRARIES ${THREAD})
-  if(ARCH_WIDTH EQUAL "32")
-    find_library(ATOMIC atomic)
-    list(APPEND EXTRA_LIBRARIES ${ATOMIC})
-  endif()
-endif()
+set(CMAKE_AUTOMOC ON)
 
-include("${CMAKE_CURRENT_SOURCE_DIR}/src/version.cmake")
+set(CRYPTONOTE_SOURCES
+  cryptonote/external/miniupnpc/connecthostport.c
+  cryptonote/external/miniupnpc/igd_desc_parse.c
+  cryptonote/external/miniupnpc/minisoap.c
+  cryptonote/external/miniupnpc/miniupnpc.c
+  cryptonote/external/miniupnpc/miniwget.c
+  cryptonote/external/miniupnpc/minixml.c
+  cryptonote/external/miniupnpc/portlistingparse.c
+  cryptonote/external/miniupnpc/receivedata.c
+  cryptonote/external/miniupnpc/upnpcommands.c
+  cryptonote/external/miniupnpc/upnpreplyparse.c
+  cryptonote/src/Common/Base58.cpp
+  cryptonote/src/Common/CommandLine.cpp
+  cryptonote/src/Common/Util.cpp
+  cryptonote/src/Common/StringTools.cpp
+  cryptonote/src/Common/JsonValue.cpp
+  cryptonote/src/Common/ConsoleTools.cpp
+  cryptonote/src/Common/MemoryInputStream.cpp
+  cryptonote/src/Common/PathTools.cpp
+  cryptonote/src/Common/StdInputStream.cpp
+  cryptonote/src/Common/StdOutputStream.cpp
+  cryptonote/src/Common/StreamTools.cpp
+  cryptonote/src/Common/StringOutputStream.cpp
+  cryptonote/src/Common/StringView.cpp
+  cryptonote/src/Common/VectorOutputStream.cpp
+  cryptonote/src/crypto/blake256.c
+  cryptonote/src/crypto/chacha8.c
+  cryptonote/src/crypto/crypto-ops-data.c
+  cryptonote/src/crypto/crypto-ops.c
+  cryptonote/src/crypto/crypto.cpp
+  cryptonote/src/crypto/groestl.c
+  cryptonote/src/crypto/hash-extra-blake.c
+  cryptonote/src/crypto/hash-extra-groestl.c
+  cryptonote/src/crypto/hash-extra-jh.c
+  cryptonote/src/crypto/hash-extra-skein.c
+  cryptonote/src/crypto/hash.c
+  cryptonote/src/crypto/jh.c
+  cryptonote/src/crypto/keccak.c
+  cryptonote/src/crypto/oaes_lib.c
+  cryptonote/src/crypto/random.c
+  cryptonote/src/crypto/skein.c
+  cryptonote/src/crypto/slow-hash.c
+  cryptonote/src/crypto/slow-hash.cpp
+  cryptonote/src/crypto/tree-hash.c
+  cryptonote/src/CryptoNoteCore/BlockchainIndices.cpp
+  cryptonote/src/CryptoNoteCore/BlockchainMessages.cpp
+  cryptonote/src/CryptoNoteCore/BlockIndex.cpp
+  cryptonote/src/CryptoNoteCore/CoreConfig.cpp
+  cryptonote/src/CryptoNoteCore/CryptoNoteBasic.cpp
+  cryptonote/src/CryptoNoteCore/CryptoNoteTools.cpp
+  cryptonote/src/CryptoNoteCore/Currency.cpp
+  cryptonote/src/CryptoNoteCore/MinerConfig.cpp
+  cryptonote/src/CryptoNoteCore/Transaction.cpp
+  cryptonote/src/CryptoNoteCore/Account.cpp
+  cryptonote/src/CryptoNoteCore/Blockchain.cpp
+  cryptonote/src/CryptoNoteCore/Checkpoints.cpp
+  cryptonote/src/CryptoNoteCore/CryptoNoteBasicImpl.cpp
+  cryptonote/src/CryptoNoteCore/Core.cpp
+  cryptonote/src/CryptoNoteCore/CryptoNoteFormatUtils.cpp
+  cryptonote/src/CryptoNoteCore/CryptoNoteSerialization.cpp
+  cryptonote/src/CryptoNoteCore/Difficulty.cpp
+  cryptonote/src/CryptoNoteCore/IBlock.cpp
+  cryptonote/src/CryptoNoteCore/Miner.cpp
+  cryptonote/src/CryptoNoteCore/TransactionExtra.cpp
+  cryptonote/src/CryptoNoteCore/TransactionPool.cpp
+  cryptonote/src/CryptoNoteCore/TransactionPrefixImpl.cpp
+  cryptonote/src/CryptoNoteCore/TransactionUtils.cpp
+  cryptonote/src/InProcessNode/InProcessNode.cpp
+  cryptonote/src/InProcessNode/InProcessNodeErrors.cpp
+  cryptonote/src/NodeRpcProxy/NodeErrors.cpp
+  cryptonote/src/NodeRpcProxy/NodeRpcProxy.cpp
+  cryptonote/src/P2p/NetNodeConfig.cpp
+  cryptonote/src/Serialization/BinaryInputStreamSerializer.cpp
+  cryptonote/src/Serialization/BinaryOutputStreamSerializer.cpp
+  cryptonote/src/Serialization/JsonInputValueSerializer.cpp
+  cryptonote/src/Serialization/JsonOutputStreamSerializer.cpp
+  cryptonote/src/Serialization/KVBinaryInputStreamSerializer.cpp
+  cryptonote/src/Serialization/KVBinaryOutputStreamSerializer.cpp
+  cryptonote/src/Serialization/SerializationOverloads.cpp
+  cryptonote/src/Transfers/BlockchainSynchronizer.cpp
+  cryptonote/src/Transfers/SynchronizationState.cpp
+  cryptonote/src/Transfers/TransfersConsumer.cpp
+  cryptonote/src/Transfers/TransfersContainer.cpp
+  cryptonote/src/Transfers/TransfersSubscription.cpp
+  cryptonote/src/Transfers/TransfersSynchronizer.cpp
+  cryptonote/src/Wallet/LegacyKeysImporter.cpp
+  cryptonote/src/Wallet/WalletAsyncContextCounter.cpp
+  cryptonote/src/Wallet/WalletErrors.cpp
+  cryptonote/src/Wallet/WalletSerializationV1.cpp
+  cryptonote/src/Wallet/WalletSerializationV2.cpp
+  cryptonote/src/Wallet/WalletUtils.cpp
+  cryptonote/src/WalletLegacy/KeysStorage.cpp
+  cryptonote/src/WalletLegacy/WalletLegacy.cpp
+  cryptonote/src/WalletLegacy/WalletHelper.cpp
+  cryptonote/src/WalletLegacy/WalletLegacySerializer.cpp
+  cryptonote/src/WalletLegacy/WalletLegacySerialization.cpp
+  cryptonote/src/WalletLegacy/WalletTransactionSender.cpp
+  cryptonote/src/WalletLegacy/WalletUnconfirmedTransactions.cpp
+  cryptonote/src/WalletLegacy/WalletUserTransactionsCache.cpp
+  cryptonote/src/System/ContextGroup.cpp
+  cryptonote/src/System/Event.cpp
+  cryptonote/src/System/EventLock.cpp
+  cryptonote/src/System/InterruptedException.cpp
+  cryptonote/src/System/Ipv4Address.cpp
+  cryptonote/src/System/TcpStream.cpp
+  cryptonote/src/HTTP/HttpRequest.cpp
+  cryptonote/src/HTTP/HttpParser.cpp
+  cryptonote/src/HTTP/HttpParserErrorCodes.cpp
+  cryptonote/src/HTTP/HttpResponse.cpp
+  cryptonote/src/Rpc/HttpClient.cpp
+  cryptonote/src/Rpc/JsonRpc.cpp
+  cryptonote/src/P2p/NetNode.cpp
+  cryptonote/src/P2p/LevinProtocol.cpp
+  cryptonote/src/P2p/NetNodeConfig.cpp
+  cryptonote/src/P2p/PeerListManager.cpp
+  cryptonote/src/CryptoNoteProtocol/CryptoNoteProtocolHandler.cpp
+  cryptonote/src/Logging/ILogger.cpp
+  cryptonote/src/Logging/LoggerGroup.cpp
+  cryptonote/src/Logging/CommonLogger.cpp
+  cryptonote/src/Logging/LoggerManager.cpp
+  cryptonote/src/Logging/FileLogger.cpp
+  cryptonote/src/Logging/StreamLogger.cpp
+  cryptonote/src/Logging/ConsoleLogger.cpp
+  cryptonote/src/Logging/LoggerMessage.cpp
+  cryptonote/src/Logging/LoggerRef.cpp
+  cryptonote/src/BlockchainExplorer/BlockchainExplorer.cpp
+  cryptonote/src/BlockchainExplorer/BlockchainExplorerDataBuilder.cpp
+  cryptonote/src/BlockchainExplorer/BlockchainExplorerErrors.cpp
+)
 
-function (treat_warnings_as_errors dirs)
-  foreach(dir ${ARGV})
-    set_property(DIRECTORY ${dir}
-      APPEND PROPERTY COMPILE_FLAGS "-Werror")
-  endforeach()
-endfunction()
+file(GLOB_RECURSE SOURCES src/*.cpp)
+file(GLOB_RECURSE HEADERS src/*.h)
+file(GLOB_RECURSE FORMS src/gui/ui/*.ui)
+file(GLOB_RECURSE Mnemonics cryptonote/src/mnemonics/*)
 
-add_subdirectory(src)
+set(QRC src/resources.qrc)
 
-treat_warnings_as_errors(src)
-
-option(BUILD_TESTS "Build tests." OFF)
-
-if(BUILD_TESTS)
-  add_subdirectory(tests)
-endif()
+qt5_wrap_ui(UIS ${FORMS})
+qt5_add_resources(RCC ${QRC})
 
 
+if (WIN32)
+  if (NOT MSVC)
+	message(FATAL_ERROR "Only MSVC is supported on this platform")
+  endif ()
+  add_definitions(/D_CRT_SECURE_NO_WARNINGS /D_WIN32_WINNT=0x0600 /DSTATICLIB)
+  include_directories(cryptonote/src/platform/msc)
 
-set(COMMIT_ID_IN_VERSION ON CACHE BOOL "Include commit ID in version")
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/version")
-if (NOT COMMIT_ID_IN_VERSION)
-  set(VERSION "${VERSION}-unknown")
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-  add_custom_target(version ALL)
-elseif(DEFINED COMMIT)
-  string(REPLACE "." "\\." VERSION_RE "${VERSION}")
-  if(NOT REFS MATCHES "(\\(|, )tag: v${VERSION_RE}(\\)|, )")
-    set(VERSION "${VERSION}-g${COMMIT}")
-  endif()
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-  add_custom_target(version ALL)
-else()
-  find_package(Git QUIET)
-  if(Git_FOUND OR GIT_FOUND)
-    message(STATUS "Found Git: ${GIT_EXECUTABLE}")
-    add_custom_target(version ALL "${CMAKE_COMMAND}" "-D" "VERSION=${VERSION}" "-D" "GIT=${GIT_EXECUTABLE}" "-D" "TO=${CMAKE_CURRENT_BINARY_DIR}/version/version.h" "-P" "${CMAKE_CURRENT_SOURCE_DIR}/src/version.cmake" WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-  else()
-    message(STATUS "WARNING: Git was not found!")
-    set(VERSION "${VERSION}-unknown")
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/version.h.in" "${CMAKE_CURRENT_BINARY_DIR}/version/version.h")
-    add_custom_target(version ALL)
-  endif()
-endif()
+  set(PLATFORM_DIR Windows)
+  set(BUILD_PLATFORM WIN32)
+  set(BUILD_RESOURCES src/cryptonotewallet.rc)
+  set(QTMAIN Qt5::WinMain)
+
+elseif (UNIX)
+  set(CRYPTONOTE_SOURCES ${CRYPTONOTE_SOURCES} cryptonote/external/miniupnpc/minissdpc.c)
+  if (APPLE)
+    enable_language(ASM)
+    file(GLOB_RECURSE OBJC_SOURCES src/*.mm)
+    set(SOURCES ${SOURCES} ${OBJC_SOURCES})
+    set(PLATFORM_DIR OSX)
+    set(MACOSX_BUNDLE_INFO_STRING "Prosus GUI wallet")
+    set(MACOSX_BUNDLE_LONG_VERSION_STRING "${VERSION_VERSION}.${VERSION_MINOR}.${VERSION_PATCH}")
+    set(MACOSX_BUNDLE_BUNDLE_NAME "ProsusMoney")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${VERSION_VERSION}.${VERSION_MINOR}.${VERSION_PATCH}")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "$${VERSION_VERSION}.${VERSION_MINOR}.${VERSION_PATCH}")
+
+    find_package(Qt5PrintSupport REQUIRED)
+
+    include_directories(/usr/include/malloc)
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes -std=c++11 -stdlib=libc++")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -maes -D_DARWIN_C_SOURCE")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework CoreFoundation -framework Carbon -framework IOKit -L/usr/lib")
+
+    set(MACOSX_BUNDLE_ICON_FILE karbowanec.icns)
+    set(APPLICATION_ICON src/images/karbowanec.icns)
+    set_source_files_properties(${APPLICATION_ICON} PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+
+    set(BUILD_PLATFORM MACOSX_BUNDLE)
+    set(BUILD_RESOURCES ${APPLICATION_ICON})
+	
+    GET_TARGET_PROPERTY(QT_LIB_DIR "${Qt5Widgets_LIBRARIES}" LOCATION)
+    GET_FILENAME_COMPONENT(QT_LIB_DIR "${QT_LIB_DIR}" PATH)
+  else(APPLE)
+    set(PLATFORM_DIR Linux)
+    list(REMOVE_ITEM HEADERS ${CMAKE_SOURCE_DIR}/src/gui/macdockiconhandler.h)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -maes -std=c++11")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -maes -std=c11")
+  endif (APPLE)
+endif ()
+
+include_directories(cryptonote/src/Platform/${PLATFORM_DIR})
+include_directories(cryptonote/src/Platform/Posix)
+file(GLOB PLATFORM_SOURCES cryptonote/src/Platform/${PLATFORM_DIR}/System/*)
+set(CRYPTONOTE_SOURCES ${CRYPTONOTE_SOURCES} ${PLATFORM_SOURCES})
+
+add_library(${CRYPTONOTE_LIB} STATIC ${CRYPTONOTE_SOURCES})
+add_library(Mnemonics ${Mnemonics})
+set_target_properties(${CRYPTONOTE_LIB} PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
+target_link_libraries(${CRYPTONOTE_LIB} ${Boost_LIBRARIES})
+set_target_properties(Mnemonics PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
+target_link_libraries(Mnemonics ${Boost_LIBRARIES})
+
+#add_executable(${PROJECT_NAME} ${BUILD_PLATFORM} ${BUILD_RESOURCES} ${SOURCES} ${HEADERS} ${UIS} ${RCC} ${QM} ${TRANSLATIONS})
+add_executable(${PROJECT_NAME} ${BUILD_PLATFORM} ${BUILD_RESOURCES} ${SOURCES} ${HEADERS} ${UIS} ${RCC})
+set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS _GNU_SOURCE)
+target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES} ${QTMAIN} ${CRYPTONOTE_LIB} ${QRENCODE_LIB} Mnemonics)
+
+if (APPLE)
+  qt5_use_modules(${PROJECT_NAME} PrintSupport)
+elseif (UNIX)
+  target_link_libraries(${PROJECT_NAME} -lpthread)
+elseif (WIN32)
+  target_link_libraries(${PROJECT_NAME} Imm32 Iphlpapi Winmm)
+endif (APPLE)
+
+qt5_use_modules(${PROJECT_NAME} Widgets Gui Network)
+
+# Installation
+
+set(CPACK_PACKAGE_NAME ${CN_PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION ${CN_VERSION})
+set(CPACK_PACKAGE_VENDOR "prosus-project")
+set(CPACK_PACKAGE_CONTACT "http://prosus.money")
+set(CPACK_STRIP_FILES ON)
+if (APPLE)
+    set(CPACK_GENERATOR DragNDrop)
+    install(TARGETS ${PROJECT_NAME} BUNDLE DESTINATION .)
+    set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${VERSION_RELEASE}")
+elseif (UNIX)
+    find_program(RPMBUILD rpmbuild)
+
+    install(PROGRAMS build/${PROJECT_NAME} DESTINATION bin
+    PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+    install(FILES src/prosuswallet.desktop DESTINATION share/applications)
+    install(FILES src/images/cryptonote.png DESTINATION share/pixmaps RENAME prosus.png)
+    install(FILES copyright DESTINATION share/doc/prosus)
+
+    if (NOT RPMBUILD)
+        set(CPACK_GENERATOR DEB)
+        set(CPACK_DEBIAN_PACKAGE_NAME ${CPACK_PACKAGE_NAME})
+        set(CPACK_SYSTEM_NAME 64-bit)
+        set(CPACK_DEBIAN_PACKAGE_MAINTAINER "${CPACK_PACKAGE_VENDOR} <krbcoin@ukr.net>")
+        set(CPACK_DEBIAN_PACKAGE_SECTION Office)
+        set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+        set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "Prosus wallet
+ Prosus is a decentralized, privacy oriented peer-to-peer
+ cryptocurrency. It is open-source, nobody owns or controls Prosus
+ and everyone can take part.")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_DEBIAN_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${VERSION_RELEASE}${CPACK_SYSTEM_NAME}")
+    else()
+        set(CPACK_GENERATOR RPM)
+        set(CPACK_SYSTEM_NAME x86_64)
+        set(CPACK_RPM_PACKAGE_RELEASE ${VERSION_RELEASE})
+        set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+        set(CPACK_RPM_PACKAGE_GROUP Office)
+        set(CPACK_RPM_PACKAGE_REQUIRES "qt5-qtbase >= 5.3.2, qt5-qtbase-gui >= 5.3.2")
+        set(CPACK_RPM_PACKAGE_SUMMARY "Prosus wallet")
+        set(CPACK_RPM_PACKAGE_DESCRIPTION "Prosus wallet
+ Prosus is a decentrilized, privacy oriented peer-to-peer
+ cryptocurrency. It is open-source, nobody owns or controls Prosus
+ and everyone can take part.")
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${VERSION_RELEASE}${CPACK_SYSTEM_NAME}")
+    endif ()
+elseif (WIN32)
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION .)
+  set(CPACK_GENERATOR ZIP)
+endif (APPLE)
+
+include(CPack)
