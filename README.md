@@ -1,11 +1,6 @@
 
 # PROSUS
 
-[![GitHub Issues](https://img.shields.io/github/issues/ProsusCorp/prosus.svg?style=plastic)](https://github.com/ProsusCorp/prosus/issues)
-![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg?style=plastic)
-![Release](https://img.shields.io/github/release/ProsusCorp/prosus.svg?style=plastic)
-![Downloads](https://img.shields.io/github/downloads/ProsusCorp/prosus/latest/total.svg?style=plastic)
-
 <img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
 
 Prosus was created in Chile (2016) as a means of payment, and its goal would be to implement the blockchain technology in the Iot of the energy-grid. This project promote altruism as the world future economy.
