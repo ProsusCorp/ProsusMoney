@@ -1,6 +1,20 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+// Copyright (c) 2016, The Forknote developers
+//
+// This file is part of Bytecoin.
+//
+// Bytecoin is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Bytecoin is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "TransactionPool.h"
 
@@ -8,6 +22,7 @@
 #include <ctime>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 
 #include <boost/filesystem.hpp>
 
@@ -84,29 +99,34 @@ namespace CryptoNote {
 
   using CryptoNote::BlockInfo;
 
+  std::unordered_set<Crypto::Hash> m_validated_transactions;
+
   //---------------------------------------------------------------------------------
   tx_memory_pool::tx_memory_pool(
     const CryptoNote::Currency& currency, 
     CryptoNote::ITransactionValidator& validator, 
     CryptoNote::ITimeProvider& timeProvider,
-    Logging::ILogger& log) :
+    Logging::ILogger& log,
+    bool blockchainIndexesEnabled) :
     m_currency(currency),
     m_validator(validator), 
     m_timeProvider(timeProvider), 
     m_txCheckInterval(60, timeProvider),
     m_fee_index(boost::get<1>(m_transactions)),
-    logger(log, "txpool") {
+    logger(log, "txpool"),
+    m_paymentIdIndex(blockchainIndexesEnabled),
+    m_timestampIndex(blockchainIndexesEnabled) {
   }
   //---------------------------------------------------------------------------------
   bool tx_memory_pool::add_tx(const Transaction &tx, /*const Crypto::Hash& tx_prefix_hash,*/ const Crypto::Hash &id, size_t blobSize, tx_verification_context& tvc, bool keptByBlock) {
     if (!check_inputs_types_supported(tx)) {
-      tvc.m_verifivation_failed = true;
+      tvc.m_verification_failed = true;
       return false;
     }
 
     uint64_t inputs_amount = 0;
     if (!get_inputs_money_amount(tx, inputs_amount)) {
-      tvc.m_verifivation_failed = true;
+      tvc.m_verification_failed = true;
       return false;
     }
 
@@ -115,7 +135,7 @@ namespace CryptoNote {
     if (outputs_amount > inputs_amount) {
       logger(INFO) << "transaction use more money then it has: use " << m_currency.formatAmount(outputs_amount) <<
         ", have " << m_currency.formatAmount(inputs_amount);
-      tvc.m_verifivation_failed = true;
+      tvc.m_verification_failed = true;
       return false;
     }
 
@@ -124,7 +144,7 @@ namespace CryptoNote {
     if (!keptByBlock && !isFusionTransaction && fee < m_currency.minimumFee()) {
       logger(INFO) << "transaction fee is not enough: " << m_currency.formatAmount(fee) <<
         ", minimum fee: " << m_currency.formatAmount(m_currency.minimumFee());
-      tvc.m_verifivation_failed = true;
+      tvc.m_verification_failed = true;
       tvc.m_tx_fee_too_small = true;
       return false;
     }
@@ -134,7 +154,7 @@ namespace CryptoNote {
       std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
       if (haveSpentInputs(tx)) {
         logger(INFO) << "Transaction with id= " << id << " used already spent inputs";
-        tvc.m_verifivation_failed = true;
+        tvc.m_verification_failed = true;
         return false;
       }
     }
@@ -147,7 +167,7 @@ namespace CryptoNote {
     if (!inputsValid) {
       if (!keptByBlock) {
         logger(INFO) << "tx used wrong inputs, rejected";
-        tvc.m_verifivation_failed = true;
+        tvc.m_verification_failed = true;
         return false;
       }
 
@@ -159,7 +179,7 @@ namespace CryptoNote {
       bool sizeValid = m_validator.checkTransactionSize(blobSize);
       if (!sizeValid) {
         logger(INFO) << "tx too big, rejected";
-        tvc.m_verifivation_failed = true;
+        tvc.m_verification_failed = true;
         return false;
       }
     }
@@ -168,7 +188,7 @@ namespace CryptoNote {
 
     if (!keptByBlock && m_recentlyDeletedTransactions.find(id) != m_recentlyDeletedTransactions.end()) {
       logger(INFO) << "Trying to add recently deleted transaction. Ignore: " << id;
-      tvc.m_verifivation_failed = false;
+      tvc.m_verification_failed = false;
       tvc.m_should_be_relayed = false;
       tvc.m_added_to_pool = false;
       return true;
@@ -200,12 +220,12 @@ namespace CryptoNote {
 
     tvc.m_added_to_pool = true;
     tvc.m_should_be_relayed = inputsValid && (fee > 0 || isFusionTransaction);
-    tvc.m_verifivation_failed = true;
+    tvc.m_verification_failed = true;
 
     if (!addTransactionInputs(id, tx, keptByBlock))
       return false;
 
-    tvc.m_verifivation_failed = false;
+    tvc.m_verification_failed = false;
     //succeed
     return true;
   }
@@ -246,15 +266,39 @@ namespace CryptoNote {
       txs.push_back(tx_vt.tx);
     }
   }
+
+  //---------------------------------------------------------------------------------
+  void tx_memory_pool::getMemoryPool(std::list<tx_memory_pool::TransactionDetails> txs) const {
+	  std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
+	  for (const auto& txd : m_fee_index) {
+		  txs.push_back(txd);
+	  }
+  }
+
+  std::list<CryptoNote::tx_memory_pool::TransactionDetails> tx_memory_pool::getMemoryPool() const {
+	  std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
+	  std::list<tx_memory_pool::TransactionDetails> txs;
+	  for (const auto& txd : m_fee_index) {
+		  txs.push_back(txd);
+	  }
+	  return txs;
+  }
+
   //---------------------------------------------------------------------------------
   void tx_memory_pool::get_difference(const std::vector<Crypto::Hash>& known_tx_ids, std::vector<Crypto::Hash>& new_tx_ids, std::vector<Crypto::Hash>& deleted_tx_ids) const {
     std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
     std::unordered_set<Crypto::Hash> ready_tx_ids;
     for (const auto& tx : m_transactions) {
       TransactionCheckInfo checkInfo(tx);
-      if (is_transaction_ready_to_go(tx.tx, checkInfo)) {
-        ready_tx_ids.insert(tx.id);
-      }
+	  if (m_validated_transactions.find(tx.id) != m_validated_transactions.end()) {
+		  ready_tx_ids.insert(tx.id);
+		  logger(DEBUGGING) << "MemPool - tx " << tx.id << " loaded from cache";
+	  }
+	  else if (is_transaction_ready_to_go(tx.tx, checkInfo)) {
+		  ready_tx_ids.insert(tx.id);
+		  m_validated_transactions.insert(tx.id);
+		  logger(DEBUGGING) << "MemPool - tx " << tx.id << " added to cache";
+	  }
     }
 
     std::unordered_set<Crypto::Hash> known_set(known_tx_ids.begin(), known_tx_ids.end());
@@ -274,10 +318,20 @@ namespace CryptoNote {
   }
   //---------------------------------------------------------------------------------
   bool tx_memory_pool::on_blockchain_inc(uint64_t new_block_height, const Crypto::Hash& top_block_id) {
+    std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
+    if (!m_validated_transactions.empty()) {
+      logger(DEBUGGING) << "MemPool - Block height incremented, cleared " << m_validated_transactions.size() << " cached transaction hashes. New height: " << new_block_height << " Top block: " << top_block_id;
+      m_validated_transactions.clear();
+	}
     return true;
   }
   //---------------------------------------------------------------------------------
   bool tx_memory_pool::on_blockchain_dec(uint64_t new_block_height, const Crypto::Hash& top_block_id) {
+    std::lock_guard<std::recursive_mutex> lock(m_transactions_lock);
+    if (!m_validated_transactions.empty()) {
+      logger(DEBUGGING, YELLOW) << "MemPool - Block height decremented " << m_validated_transactions.size() << " cached transaction hashes. New height: " << new_block_height << " Top block: " << top_block_id;
+      m_validated_transactions.clear();
+	}
     return true;
   }
   //---------------------------------------------------------------------------------
@@ -331,7 +385,10 @@ namespace CryptoNote {
         << "max_used_block_height: " << txd.maxUsedBlock.height << std::endl
         << "max_used_block_id: " << txd.maxUsedBlock.id << std::endl
         << "last_failed_height: " << txd.lastFailedBlock.height << std::endl
-        << "last_failed_id: " << txd.lastFailedBlock.id << std::endl
+		<< "last_failed_id: " << txd.lastFailedBlock.id << std::endl
+		<< "amount_out: " << get_outs_money_amount(txd.tx) << std::endl
+        << "fee_atomic_units: " << txd.fee << std::endl
+        << "received_timestamp: " << txd.receiveTime << std::endl
         << "received: " << std::ctime(&txd.receiveTime) << std::endl;
     }
 
@@ -345,8 +402,8 @@ namespace CryptoNote {
     total_size = 0;
     fee = 0;
 
-    size_t max_total_size = 2 * median_size - m_currency.minerTxBlobReservedSize();
-    max_total_size = std::min(max_total_size, maxCumulativeSize);
+    size_t max_total_size = (125 * median_size) / 100;
+    max_total_size = std::min(max_total_size, maxCumulativeSize) - m_currency.minerTxBlobReservedSize();
 
     BlockTemplate blockTemplate;
 
@@ -360,6 +417,7 @@ namespace CryptoNote {
       TransactionCheckInfo checkInfo(txd);
       if (is_transaction_ready_to_go(txd.tx, checkInfo) && blockTemplate.addTransaction(txd.id, txd.tx)) {
         total_size += txd.blobSize;
+        logger(DEBUGGING) << "Fusion transaction " << txd.id << " included to block template";
       }
     }
 
@@ -372,7 +430,16 @@ namespace CryptoNote {
       }
 
       TransactionCheckInfo checkInfo(txd);
-      bool ready = is_transaction_ready_to_go(txd.tx, checkInfo);
+	  bool ready = false;
+	  if (m_validated_transactions.find(txd.id) != m_validated_transactions.end()) {
+		  ready = true;
+		  logger(DEBUGGING) << "Fill block template - tx added from cache: " << txd.id;
+	  }
+	  else if (is_transaction_ready_to_go(txd.tx, checkInfo)) {
+		  ready = true;
+		  m_validated_transactions.insert(txd.id);
+		  logger(DEBUGGING) << "Fill block template - tx added to cache: " << txd.id;
+	  }
 
       // update item state
       m_fee_index.modify(i, [&checkInfo](TransactionCheckInfo& item) {
@@ -382,6 +449,9 @@ namespace CryptoNote {
       if (ready && blockTemplate.addTransaction(txd.id, txd.tx)) {
         total_size += txd.blobSize;
         fee += txd.fee;
+        logger(DEBUGGING) << "Transaction " << txd.id << " included to block template";
+      } else {
+        logger(DEBUGGING) << "Transaction " << txd.id << " is failed to include to block template";
       }
     }
 
@@ -524,6 +594,10 @@ namespace CryptoNote {
     removeTransactionInputs(i->id, i->tx, i->keptByBlock);
     m_paymentIdIndex.remove(i->tx);
     m_timestampIndex.remove(i->receiveTime, i->id);
+    if (m_validated_transactions.find(i->id) != m_validated_transactions.end()) {
+      m_validated_transactions.erase(i->id);
+      logger(DEBUGGING) << "Removing transaction from MemPool cache " << i->id << ". Cache size: " << m_validated_transactions.size();
+    }
     return m_transactions.erase(i);
   }
 

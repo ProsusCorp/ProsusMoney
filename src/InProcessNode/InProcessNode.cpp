@@ -1,6 +1,6 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #include "InProcessNode.h"
 
@@ -22,12 +22,22 @@ using namespace Common;
 
 namespace CryptoNote {
 
+namespace {
+  uint64_t getBlockReward(const Block& block) {
+    uint64_t reward = 0;
+    for (const TransactionOutput& out : block.baseTransaction.outputs) {
+      reward += out.amount;
+    }
+    return reward;
+  }
+}
+
 InProcessNode::InProcessNode(CryptoNote::ICore& core, CryptoNote::ICryptoNoteProtocolQuery& protocol) :
     state(NOT_INITIALIZED),
     core(core),
     protocol(protocol),
-    blockchainExplorerDataBuilder(core, protocol)
-{
+    blockchainExplorerDataBuilder(core, protocol) {
+  resetLastLocalBlockHeaderInfo();
 }
 
 InProcessNode::~InProcessNode() {
@@ -62,6 +72,7 @@ void InProcessNode::init(const Callback& callback) {
 
     work.reset(new boost::asio::io_service::work(ioService));
     workerThread.reset(new std::thread(&InProcessNode::workerFunc, this));
+    updateLastLocalBlockHeaderInfo();
 
     state = INITIALIZED;
   }
@@ -81,6 +92,7 @@ bool InProcessNode::doShutdown() {
 
   protocol.removeObserver(this);
   core.removeObserver(this);
+  resetLastLocalBlockHeaderInfo();
   state = NOT_INITIALIZED;
 
   work.reset();
@@ -316,7 +328,7 @@ std::error_code InProcessNode::doRelayTransaction(const CryptoNote::Transaction&
       return make_error_code(CryptoNote::error::REQUEST_ERROR);
     }
 
-    if(tvc.m_verifivation_failed) {
+    if(tvc.m_verification_failed) {
       return make_error_code(CryptoNote::error::REQUEST_ERROR);
     }
 
@@ -348,19 +360,12 @@ size_t InProcessNode::getPeerCount() const {
 }
 
 uint32_t InProcessNode::getLocalBlockCount() const {
-  {
-    std::unique_lock<std::mutex> lock(mutex);
-    if (state != INITIALIZED) {
-      throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
-    }
+  std::unique_lock<std::mutex> lock(mutex);
+  if (state != INITIALIZED) {
+    throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
   }
 
-  uint32_t lastIndex;
-  Crypto::Hash ignore;
-
-  core.get_blockchain_top(lastIndex, ignore);
-
-  return lastIndex + 1;
+  return lastLocalBlockHeaderInfo.index + 1;
 }
 
 uint32_t InProcessNode::getKnownBlockCount() const {
@@ -375,19 +380,12 @@ uint32_t InProcessNode::getKnownBlockCount() const {
 }
 
 uint32_t InProcessNode::getLastLocalBlockHeight() const {
-  {
-    std::unique_lock<std::mutex> lock(mutex);
-    if (state != INITIALIZED) {
-      throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
-    }
+  std::unique_lock<std::mutex> lock(mutex);
+  if (state != INITIALIZED) {
+    throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
   }
 
-  uint32_t height;
-  Crypto::Hash ignore;
-
-  core.get_blockchain_top(height, ignore);
-
-  return height;
+  return lastLocalBlockHeaderInfo.index;
 }
 
 uint32_t InProcessNode::getLastKnownBlockHeight() const {
@@ -406,19 +404,17 @@ uint64_t InProcessNode::getLastLocalBlockTimestamp() const {
   if (state != INITIALIZED) {
     throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
   }
-  lock.unlock();
 
-  uint32_t ignore;
-  Crypto::Hash hash;
+  return lastLocalBlockHeaderInfo.timestamp;
+}
 
-  core.get_blockchain_top(ignore, hash);
-
-  CryptoNote::Block block;
-  if (!core.getBlockByHash(hash, block)) {
-    throw std::system_error(make_error_code(CryptoNote::error::INTERNAL_NODE_ERROR));
+BlockHeaderInfo InProcessNode::getLastLocalBlockHeaderInfo() const {
+  std::unique_lock<std::mutex> lock(mutex);
+  if (state != INITIALIZED) {
+    throw std::system_error(make_error_code(CryptoNote::error::NOT_INITIALIZED));
   }
 
-  return block.timestamp;
+  return lastLocalBlockHeaderInfo;
 }
 
 void InProcessNode::peerCountUpdated(size_t count) {
@@ -426,19 +422,55 @@ void InProcessNode::peerCountUpdated(size_t count) {
 }
 
 void InProcessNode::lastKnownBlockHeightUpdated(uint32_t height) {
-  observerManager.notify(&INodeObserver::lastKnownBlockHeightUpdated, height);
+  observerManager.notify(&INodeObserver::lastKnownBlockHeightUpdated, height - 1);
 }
 
 void InProcessNode::blockchainUpdated() {
-  uint32_t height;
-  Crypto::Hash ignore;
-
-  core.get_blockchain_top(height, ignore);
-  observerManager.notify(&INodeObserver::localBlockchainUpdated, height);
+  std::unique_lock<std::mutex> lock(mutex);
+  updateLastLocalBlockHeaderInfo();
+  uint32_t blockIndex = lastLocalBlockHeaderInfo.index;
+  lock.unlock();
+  observerManager.notify(&INodeObserver::localBlockchainUpdated, blockIndex);
 }
 
 void InProcessNode::poolUpdated() {
   observerManager.notify(&INodeObserver::poolChanged);
+}
+
+void InProcessNode::updateLastLocalBlockHeaderInfo() {
+  uint32_t height;
+  Crypto::Hash hash;
+  Block block;
+  uint64_t difficulty;
+  do {
+    core.get_blockchain_top(height, hash);
+  } while (!core.getBlockByHash(hash, block) || !core.getBlockDifficulty(height, difficulty));
+
+  lastLocalBlockHeaderInfo.index = height;
+  lastLocalBlockHeaderInfo.majorVersion = block.majorVersion;
+  lastLocalBlockHeaderInfo.minorVersion = block.minorVersion;
+  lastLocalBlockHeaderInfo.timestamp  = block.timestamp;
+  lastLocalBlockHeaderInfo.hash = hash;
+  lastLocalBlockHeaderInfo.prevHash = block.previousBlockHash;
+  lastLocalBlockHeaderInfo.nonce = block.nonce;
+  lastLocalBlockHeaderInfo.isAlternative = false;
+  lastLocalBlockHeaderInfo.depth = 0;
+  lastLocalBlockHeaderInfo.difficulty = difficulty;
+  lastLocalBlockHeaderInfo.reward = getBlockReward(block);
+}
+
+void InProcessNode::resetLastLocalBlockHeaderInfo() {
+  lastLocalBlockHeaderInfo.index = 0;
+  lastLocalBlockHeaderInfo.majorVersion = 0;
+  lastLocalBlockHeaderInfo.minorVersion = 0;
+  lastLocalBlockHeaderInfo.timestamp = 0;
+  lastLocalBlockHeaderInfo.hash = CryptoNote::NULL_HASH;
+  lastLocalBlockHeaderInfo.prevHash = CryptoNote::NULL_HASH;
+  lastLocalBlockHeaderInfo.nonce = 0;
+  lastLocalBlockHeaderInfo.isAlternative = false;
+  lastLocalBlockHeaderInfo.depth = 0;
+  lastLocalBlockHeaderInfo.difficulty = 0;
+  lastLocalBlockHeaderInfo.reward = 0;
 }
 
 void InProcessNode::blockchainSynchronized(uint32_t topHeight) {

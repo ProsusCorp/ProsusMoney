@@ -1,6 +1,6 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #pragma once
 
@@ -9,6 +9,13 @@
 #include <cstdint>
 
 #include <boost/program_options.hpp>
+
+#include "SimpleWallet/PasswordContainer.h"
+
+namespace {
+	Tools::PasswordContainer pwd_container;
+}
+
 
 namespace PaymentService {
 
@@ -25,6 +32,8 @@ struct Configuration {
 
   std::string bindAddress;
   uint16_t bindPort;
+  std::string m_rpcUser;
+  std::string m_rpcPassword;
 
   std::string containerFile;
   std::string containerPassword;

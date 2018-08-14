@@ -1,6 +1,6 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #include "CryptoNoteFormatUtils.h"
 
@@ -16,6 +16,7 @@
 #include "CryptoNoteSerialization.h"
 #include "TransactionExtra.h"
 #include "CryptoNoteTools.h"
+#include "Currency.h"
 
 #include "CryptoNoteConfig.h"
 
@@ -440,10 +441,24 @@ bool get_block_hashing_blob(const Block& b, BinaryArray& ba) {
   return true;
 }
 
+bool get_parent_block_hashing_blob(const Block& b, BinaryArray& blob) {
+  auto serializer = makeParentBlockSerializer(b, true, true);
+  return toBinaryArray(serializer, blob);
+}
+
 bool get_block_hash(const Block& b, Hash& res) {
   BinaryArray ba;
   if (!get_block_hashing_blob(b, ba)) {
     return false;
+  }
+
+  if (BLOCK_MAJOR_VERSION_2 <= b.majorVersion) {
+    BinaryArray parent_blob;
+    auto serializer = makeParentBlockSerializer(b, true, false);
+    if (!toBinaryArray(serializer, parent_blob))
+      return false;
+
+    ba.insert(ba.end(), parent_blob.begin(), parent_blob.end());
   }
 
   return getObjectHash(ba, res);
@@ -466,11 +481,19 @@ bool get_aux_block_header_hash(const Block& b, Hash& res) {
 
 bool get_block_longhash(cn_context &context, const Block& b, Hash& res) {
   BinaryArray bd;
-  if (!get_block_hashing_blob(b, bd)) {
+  if (b.majorVersion == BLOCK_MAJOR_VERSION_1) {
+    if (!get_block_hashing_blob(b, bd)) {
+      return false;
+    }
+  } else if (b.majorVersion >= BLOCK_MAJOR_VERSION_2) {
+    if (!get_parent_block_hashing_blob(b, bd)) {
+      return false;
+    }
+  } else {
     return false;
   }
-
-  cn_slow_hash(context, bd.data(), bd.size(), res);
+  const int cn_variant = b.majorVersion >= 3 ? b.majorVersion - 2 : 0;
+  cn_slow_hash(context, bd.data(), bd.size(), res, cn_variant);
   return true;
 }
 
@@ -511,6 +534,14 @@ Hash get_tx_tree_hash(const Block& b) {
     txs_ids.push_back(th);
   }
   return get_tx_tree_hash(txs_ids);
+}
+
+  bool is_valid_decomposed_amount(uint64_t amount) {
+  auto it = std::lower_bound(Currency::PRETTY_AMOUNTS.begin(), Currency::PRETTY_AMOUNTS.end(), amount);
+  if (it == Currency::PRETTY_AMOUNTS.end() || amount != *it) {
+	  return false;
+  }
+  return true;
 }
 
 }

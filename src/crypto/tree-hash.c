@@ -2,48 +2,14 @@
 // Copyleft (c) 2016-2018, Prosus Corp RTD
 // Distributed under the MIT/X11 software license.
 
+#include <alloca.h>
 #include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "hash-ops.h"
 
-#ifdef _MSC_VER
-#include <malloc.h>
-#elif !defined(__FreeBSD__) && !defined(__OpenBSD__) && !defined(__DragonFly__)
- #include <alloca.h>
-#else
- #include <stdlib.h>
-#endif
-
- 
-// Redoblar ronda, para *(count >= 3)* y para que *(count)* no sea tan largo (cálculo del árbol-hash).
-size_t tree_hash_cnt(size_t count) {
-
-/* Este algoritmo sirve para realizar *( 1 << floor(log2(count)) )*
-Existen munchas maneras de hacer un *(log2)* . Se eligió una manera complicada a propósito.
-
-El método iterativo implementado a continuación tiene como objetivo la limpieza por sobre la velocidad, 
-si el rendimiento fuera una necesidad entonces mi consejo es usar la instrucción BSR en x86
-Todas las implementaciones "paranoicas" han sido eliminadas, ya que es trivial demostrar matemáticamente 
-que el retorno siempre será una potencia de 2. 
-El espacio del problema se ha definido como *(3 <= count <= 2 ^ 28)* . Por supuesto, la cuarta parte de 
-mil millones de transacciones no es un límite superior sensato para un bloque, por lo que habrá límites más 
-estrictos en otras partes del código.  */
-
- assert( count >= 3 ); // los casos para 0,1,2 son tratados en otro lugar.
- assert( count <= 0x10000000 ); // límite limpio de 2^28, MSB=1 causa un ciclo infinito.
-
- size_t pow = 2;
- while(pow < count) pow <<= 1;
- return pow >> 1;
-}
-
 void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
-/* Un bloque de blockchain puede ser atacado para forzarlo a tener 514 transacciones, lo cual desencadena un 
-mal cálculo de la  variable *(cnt)* en el código original de Cryptonote. 
-Este bug aparece en todas las cryptomonedas basadas en Cryptonote. */
-
   assert(count > 0);
   if (count == 1) {
     memcpy(root_hash, hashes, HASH_SIZE);
@@ -51,28 +17,96 @@ Este bug aparece en todas las cryptomonedas basadas en Cryptonote. */
     cn_fast_hash(hashes, 2 * HASH_SIZE, root_hash);
   } else {
     size_t i, j;
-
-    size_t cnt = tree_hash_cnt( count );
-
+    size_t cnt = count - 1;
     char (*ints)[HASH_SIZE];
-    size_t ints_size = cnt * HASH_SIZE;
-    // asignar, y poner a cero como protección adicional para el uso de memoria no inicializada.
-    ints = alloca(ints_size);  memset( ints , 0 , ints_size);  
-    
+    for (i = 1; i < 8 * sizeof(size_t); i <<= 1) {
+      cnt |= cnt >> i;
+    }
+    cnt &= ~(cnt >> 1);
+    ints = alloca(cnt * HASH_SIZE);
     memcpy(ints, hashes, (2 * cnt - count) * HASH_SIZE);
-
     for (i = 2 * cnt - count, j = 2 * cnt - count; j < cnt; i += 2, ++j) {
-      cn_fast_hash(hashes[i], 64, ints[j]);
+      cn_fast_hash(hashes[i], 2 * HASH_SIZE, ints[j]);
     }
     assert(i == count);
-
     while (cnt > 2) {
       cnt >>= 1;
       for (i = 0, j = 0; j < cnt; i += 2, ++j) {
-        cn_fast_hash(ints[i], 64, ints[j]);
+        cn_fast_hash(ints[i], 2 * HASH_SIZE, ints[j]);
       }
     }
+    cn_fast_hash(ints[0], 2 * HASH_SIZE, root_hash);
+  }
+}
 
-    cn_fast_hash(ints[0], 64, root_hash);
+size_t tree_depth(size_t count) {
+  size_t i;
+  size_t depth = 0;
+  assert(count > 0);
+  for (i = sizeof(size_t) << 2; i > 0; i >>= 1) {
+    if (count >> i > 0) {
+      count >>= i;
+      depth += i;
+    }
+  }
+  return depth;
+}
+
+void tree_branch(const char (*hashes)[HASH_SIZE], size_t count, char (*branch)[HASH_SIZE]) {
+  size_t i, j;
+  size_t cnt = 1;
+  size_t depth = 0;
+  char (*ints)[HASH_SIZE];
+  assert(count > 0);
+  for (i = sizeof(size_t) << 2; i > 0; i >>= 1) {
+    if (cnt << i <= count) {
+      cnt <<= i;
+      depth += i;
+    }
+  }
+  assert(cnt == 1ULL << depth);
+  assert(depth == tree_depth(count));
+  ints = alloca((cnt - 1) * HASH_SIZE);
+  memcpy(ints, hashes + 1, (2 * cnt - count - 1) * HASH_SIZE);
+  for (i = 2 * cnt - count, j = 2 * cnt - count - 1; j < cnt - 1; i += 2, ++j) {
+    cn_fast_hash(hashes[i], 2 * HASH_SIZE, ints[j]);
+  }
+  assert(i == count);
+  while (depth > 0) {
+    assert(cnt == 1ULL << depth);
+    cnt >>= 1;
+    --depth;
+    memcpy(branch[depth], ints[0], HASH_SIZE);
+    for (i = 1, j = 0; j < cnt - 1; i += 2, ++j) {
+      cn_fast_hash(ints[i], 2 * HASH_SIZE, ints[j]);
+    }
+  }
+}
+
+void tree_hash_from_branch(const char (*branch)[HASH_SIZE], size_t depth, const char *leaf, const void *path, char *root_hash) {
+  if (depth == 0) {
+    memcpy(root_hash, leaf, HASH_SIZE);
+  } else {
+    char buffer[2][HASH_SIZE];
+    int from_leaf = 1;
+    char *leaf_path, *branch_path;
+    while (depth > 0) {
+      --depth;
+      if (path && (((const char *) path)[depth >> 3] & (1 << (depth & 7))) != 0) {
+        leaf_path = buffer[1];
+        branch_path = buffer[0];
+      } else {
+        leaf_path = buffer[0];
+        branch_path = buffer[1];
+      }
+      if (from_leaf) {
+        memcpy(leaf_path, leaf, HASH_SIZE);
+        from_leaf = 0;
+      } else {
+        cn_fast_hash(buffer, 2 * HASH_SIZE, leaf_path);
+      }
+      memcpy(branch_path, branch[depth], HASH_SIZE);
+    }
+    cn_fast_hash(buffer, 2 * HASH_SIZE, root_hash);
   }
 }

@@ -1,6 +1,19 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2016, The CryptoNote developers, The Bytecoin developers
+//
+// This file is part of Bytecoin.
+//
+// Bytecoin is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Bytecoin is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with Bytecoin.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "PasswordContainer.h"
 
@@ -55,7 +68,25 @@ namespace Tools
     m_empty = true;
   }
 
-  bool PasswordContainer::read_password()
+  bool PasswordContainer::read_password() {
+    return read_password(false);
+  }
+
+  bool PasswordContainer::read_and_validate() {
+	  std::string tmpPassword = m_password;
+
+	  if (!read_password())
+	  {
+		  std::cout << "Failed to read password!";
+		  return false;
+	  }
+	  bool validPass = m_password == tmpPassword;
+	  m_password = tmpPassword;
+
+	  return validPass;
+  }
+
+  bool PasswordContainer::read_password(bool verify)
   {
     clear();
 
@@ -63,7 +94,36 @@ namespace Tools
     if (is_cin_tty())
     {
       std::cout << "password: ";
-      r = read_from_tty();
+      if (verify)
+      {
+        std::string password1;
+        std::string password2;
+        r = read_from_tty(password1);
+        if (r)
+        {
+          std::cout << "confirm password: ";
+          r = read_from_tty(password2);
+          if (r)
+          {
+            if (password1 == password2)
+            {
+              m_password = std::move(password2);
+              m_empty = false;
+	          return true;
+            }
+            else
+            {
+              std::cout << "Passwords do not match, try again." << std::endl;
+              clear();
+              return read_password(true);
+            }
+          }
+        }
+      }
+      else
+      {
+        r = read_from_tty(m_password);
+      }
     }
     else
     {
@@ -115,7 +175,7 @@ namespace Tools
     }
   }
 
-  bool PasswordContainer::read_from_tty()
+  bool PasswordContainer::read_from_tty(std::string& password)
   {
     const char BACKSPACE = 8;
 
@@ -127,8 +187,8 @@ namespace Tools
     ::SetConsoleMode(h_cin, mode_new);
 
     bool r = true;
-    m_password.reserve(max_password_size);
-    while (m_password.size() < max_password_size)
+    password.reserve(max_password_size);
+    while (password.size() < max_password_size)
     {
       DWORD read;
       char ch;
@@ -145,16 +205,16 @@ namespace Tools
       }
       else if (ch == BACKSPACE)
       {
-        if (!m_password.empty())
+        if (!password.empty())
         {
-          m_password.back() = '\0';
-          m_password.resize(m_password.size() - 1);
+          password.back() = '\0';
+          password.resize(password.size() - 1);
           std::cout << "\b \b";
         }
       }
       else
       {
-        m_password.push_back(ch);
+        password.push_back(ch);
         std::cout << '*';
       }
     }
@@ -191,12 +251,12 @@ namespace Tools
     }
   }
 
-  bool PasswordContainer::read_from_tty()
+  bool PasswordContainer::read_from_tty(std::string& password)
   {
     const char BACKSPACE = 127;
 
-    m_password.reserve(max_password_size);
-    while (m_password.size() < max_password_size)
+    password.reserve(max_password_size);
+    while (password.size() < max_password_size)
     {
       int ch = getch();
       if (EOF == ch)
@@ -210,16 +270,16 @@ namespace Tools
       }
       else if (ch == BACKSPACE)
       {
-        if (!m_password.empty())
+        if (!password.empty())
         {
-          m_password.back() = '\0';
-          m_password.resize(m_password.size() - 1);
+          password.back() = '\0';
+          password.resize(password.size() - 1);
           std::cout << "\b \b";
         }
       }
       else
       {
-        m_password.push_back(ch);
+        password.push_back(ch);
         std::cout << '*';
       }
     }

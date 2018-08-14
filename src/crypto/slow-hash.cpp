@@ -1,12 +1,12 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #include <new>
 
 #include "hash.h"
 
-#if defined(WIN32)
+#ifdef _WIN32
 #include <Windows.h>
 #else
 #include <sys/mman.h>
@@ -20,7 +20,7 @@ namespace Crypto {
     MAP_SIZE = SLOW_HASH_CONTEXT_SIZE + ((-SLOW_HASH_CONTEXT_SIZE) & 0xfff)
   };
 
-#if defined(WIN32)
+#ifdef _WIN32
 
   cn_context::cn_context() {
     data = VirtualAlloc(nullptr, MAP_SIZE, MEM_COMMIT, PAGE_READWRITE);
@@ -50,9 +50,9 @@ namespace Crypto {
   }
 
   cn_context::~cn_context() {
-    if (munmap(data, MAP_SIZE) != 0) {
-      throw bad_alloc();
-    }
+    //if (munmap(data, MAP_SIZE) != 0) {
+    //  throw bad_alloc();
+    //}
   }
 
 #endif

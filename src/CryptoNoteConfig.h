@@ -19,23 +19,31 @@ const uint64_t CRYPTONOTE_BLOCK_FUTURE_TIME_LIMIT            = 60 * 60 * 2;
 const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 60;
 
 // PROSUS MONEY SUPPLY =>  184'467'440 coins, 11 decimals
-const uint64_t MONEY_SUPPLY                                  = (uint64_t)(-1); // atomics units
+const uint64_t MONEY_SUPPLY                                  = (uint64_t)(-1); // atomic units
 const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 11;
 
 const unsigned EMISSION_SPEED_FACTOR                         = 18;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
+const size_t CRYPTONOTE_COIN_VERSION                         = 1; // *v0.6
+const uint64_t TAIL_EMISSION_REWARD                          = UINT64_C(10000000000); // *v0.6
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW               = 100;
 const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE     = 10000; //size of block (bytes) after which reward for block calculated using block size
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1  = 100000; // *v0.6
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2  = 1000000; // *v0.6
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE; // *v0.6
 const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE        = 600;
 
 const uint64_t MINIMUM_FEE                                   = 100000;
 const uint64_t DEFAULT_DUST_THRESHOLD                        = MINIMUM_FEE;
+const uint64_t MAX_TX_MIXIN_SIZE                             = 20;
 
 const uint64_t DIFFICULTY_TARGET                             = 120; // seconds
 const uint64_t EXPECTED_NUMBER_OF_BLOCKS_PER_DAY             = 24 * 60 * 60 / DIFFICULTY_TARGET;
 const size_t   DIFFICULTY_WINDOW                             = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY; // blocks
-const size_t   DIFFICULTY_CUT                                = 60;  // timestamps to cut after sorting
+const size_t   DIFFICULTY_WINDOW_V2                          = 60; // blocks *v0.6
+const size_t   DIFFICULTY_WINDOW_V3                          = 60; // blocks *v0.6 (add one to compensate off-by-one in difficulty calculation)
+const size_t   DIFFICULTY_CUT                                = 60; // timestamps to cut after sorting
 const size_t   DIFFICULTY_LAG                                = 15;
 static_assert(2 * DIFFICULTY_CUT <= DIFFICULTY_WINDOW - 2, "Bad DIFFICULTY_WINDOW or DIFFICULTY_CUT");
 
@@ -54,6 +62,12 @@ const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_BLOCK_
 const size_t   FUSION_TX_MIN_INPUT_COUNT                     = 12;
 const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
+const uint32_t UPGRADE_HEIGHT_V2                             = 300000; // *v0.6 Diff algo Change from cryptonote default to lwma
+const uint32_t UPGRADE_HEIGHT_V3                             = 500000; // *v0.6 POW algo Change from cryptonote default to cnv7 Anti ASIC
+const unsigned UPGRADE_VOTING_THRESHOLD                      = 90; // *v0.6 percent
+const uint32_t UPGRADE_VOTING_WINDOW                         = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
+const uint32_t UPGRADE_WINDOW                                = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
+
 const char     CRYPTONOTE_BLOCKS_FILENAME[]                  = "blocks.dat";
 const char     CRYPTONOTE_BLOCKINDEXES_FILENAME[]            = "blockindexes.dat";
 const char     CRYPTONOTE_BLOCKSCACHE_FILENAME[]             = "blockscache.dat";
@@ -67,7 +81,10 @@ const char     CRYPTONOTE_NAME[]                             = "prosus";
 
 const uint8_t  CURRENT_TRANSACTION_VERSION                   =  1;
 const uint8_t  BLOCK_MAJOR_VERSION_1                         =  1;
+const uint8_t  BLOCK_MAJOR_VERSION_2                         =  2; // *v0.6
+const uint8_t  BLOCK_MAJOR_VERSION_3                         =  3; // *v0.6
 const uint8_t  BLOCK_MINOR_VERSION_0                         =  0;
+const uint8_t  BLOCK_MINOR_VERSION_1                         =  1;
 
 const size_t   BLOCKS_IDS_SYNCHRONIZING_DEFAULT_COUNT        =  10000;  //by default, blocks ids count in synchronizing
 const size_t   BLOCKS_SYNCHRONIZING_DEFAULT_COUNT            =  200;    //by default, blocks count in blocks downloading
@@ -90,11 +107,14 @@ const uint32_t P2P_DEFAULT_PING_CONNECTION_TIMEOUT           = 2000;          //
 const uint64_t P2P_DEFAULT_INVOKE_TIMEOUT                    = 60 * 2 * 1000; // 2 minutes
 const size_t   P2P_DEFAULT_HANDSHAKE_INVOKE_TIMEOUT          = 5000;          // 5 seconds
 const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1510d13336228debfee9c918ce505efe225d8c94d045fa115";
+const uint32_t P2P_IP_BLOCKTIME                              = (60 * 60 * 24);//24 hour *v0.6
+const uint32_t P2P_IP_FAILS_BEFORE_BLOCK                     = 10; // *v0.6
 
 const std::initializer_list<const char*> SEED_NODES = {
   "200.42.190.22:16180",
-//  "prosus1.bericul.com:16180",
-//  "prosus2.bericul.com:16180"	 
+  "45.7.229.167:16180",
+  "172.104.217.157:16180",
+  "165.227.80.161:16180"
 };
 
 struct CheckpointData {
@@ -107,16 +127,15 @@ __attribute__((unused))
 #endif
 
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
-	{   1626, "f791658ada4858dccedd4d2aae0832e77c11d1cbcfa7f9696122738c4d0498a2" }, // cambiamos recompensa
-	{   3150, "02f3c90eea77eece1d4a0beea5b0bcbfd8c9077f5741fea77a5318ca39a859b3" }, // secuestramos red
-	{ 100000, "4e0f584304b0968cff0fe12b949422c08908635c4122ecdee4f052fd5aa90d2a" }, // cien mil
+	{   1626, "55c456b87abc26b4ff62ad53b75c6f1033536507f60d7f7f1aed22950f4994bd" }, // cambiamos recompensa
+	{   3150, "6571b301402d7b677c53333cdb59f811dc902ac63ab5262ece30a4f66940f8f6" }, // secuestramos red
+	{ 100000, "7da57e40ecd2b332370bed0351c101d4e122129eee05a721f1a49dd4e524c143" }, // cien mil
 	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }, // primer stuck, parchamos
-	{ 200000, "b2d0d1d1727240f5c470c06a1a680a61dbad7d5331b2dac78eb194d7bd1288fd" }, // doscientos mil
-	{ 230106, "0b6e77063d90a2ef0bdecbc669ef27d35e7fe4df6c82b63fdbfc78928e3b7151" }, // segundo stuck, parchamos
+	{ 200000, "e0fb878c4de045c471dc72e3186b4aafcc55001d4f8707c73e3ba9386c7246b0" }, // doscientos mil
+	{ 230106, "fcdd9a8a6753c2c046dfe6b961c713a4e4da57377b6be1e3ad5b5273f57bdef0" }, // segundo stuck, parchamos
 //	{ 300000, "0000000000000000000000000000000000000000000000000000000000000000" },
 //	{ 400000, "0000000000000000000000000000000000000000000000000000000000000000" },
 //	{ 500000, "0000000000000000000000000000000000000000000000000000000000000000" }
-
 };
 } // www.ProsusCorp.com
 

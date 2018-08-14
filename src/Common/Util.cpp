@@ -1,6 +1,6 @@
 // Copyright (c) 2012-2017, The CryptoNote developers
 // Copyleft (c) 2016-2018, Prosus Corp RTD
-// Distributed under the MIT/X11 software license.
+// Distributed under the MIT/X11 software license
 
 #include "Util.h"
 #include <cstdio>
@@ -283,6 +283,39 @@ std::string get_nix_version_display_string()
   }
 #endif
 
+// ProsusCorp: aunque la mayoría de los proyectos Cryptonote no modifica el uso de la carpeta "roaming"
+// para alojar su archivo blockchain, el proyecto Prosus_Money decide usar una carpeta estándar en
+// la misma ruta del ejecutable. De esta manera, la restauración del archivo es más fácil y permite
+// la implementación de "billeteras portables" (prosus-wallet en un pendrive).
+
+  std::string getDefaultDataDirectory()
+  {
+    //namespace fs = boost::filesystem;
+    std::string config_folder;
+#ifdef WIN32
+    // Windows
+//  config_folder = get_special_folder_path(CSIDL_APPDATA, true) + "/" + CryptoNote::CRYPTONOTE_NAME;
+    config_folder = "blockchain";
+#else
+//    std::string pathRet;
+//    char* pszHome = getenv("HOME");
+//    if (pszHome == NULL || strlen(pszHome) == 0)
+//      pathRet = "/";
+//    else
+//      pathRet = pszHome;
+#ifdef MAC_OSX
+    // Mac
+//    pathRet /= "Library/Application Support";
+//  config_folder =  (pathRet + "/" + CryptoNote::CRYPTONOTE_NAME);
+    config_folder = "blockchain";
+#else
+    // Unix
+//  config_folder = (pathRet + "/." + CryptoNote::CRYPTONOTE_NAME);
+    config_folder = "blockchain";
+#endif
+#endif
+
+/* //ykb
   std::string getDefaultDataDirectory()
   {
     //namespace fs = boost::filesystem;
@@ -293,8 +326,7 @@ std::string get_nix_version_display_string()
     std::string config_folder;
 #ifdef WIN32
     // Windows
-//  config_folder = get_special_folder_path(CSIDL_APPDATA, true) + "/" + CryptoNote::CRYPTONOTE_NAME;
-    config_folder = "blockchain";
+    config_folder = get_special_folder_path(CSIDL_APPDATA, true) + "/" + CryptoNote::CRYPTONOTE_NAME;
 #else
     std::string pathRet;
     char* pszHome = getenv("HOME");
@@ -302,17 +334,30 @@ std::string get_nix_version_display_string()
       pathRet = "/";
     else
       pathRet = pszHome;
-#ifdef MAC_OSX
-    // Mac
-    pathRet /= "Library/Application Support";
-//  config_folder =  (pathRet + "/" + CryptoNote::CRYPTONOTE_NAME);
-    config_folder = "blockchain";
+#ifdef __APPLE__
+	// Mac
+	std::string old_config_folder = (pathRet + "/." + CryptoNote::CRYPTONOTE_NAME);
+	std::string pathRet2 = (pathRet + "/" + "Library/Application Support");
+	config_folder = (pathRet2 + "/" + CryptoNote::CRYPTONOTE_NAME);
+	// move to correct location
+	boost::filesystem::path old_path(old_config_folder);
+	if (!boost::filesystem::exists(config_folder) && boost::filesystem::is_directory(old_path)) {
+      if (boost::filesystem::create_directory(config_folder)) {
+        for (const auto& entry : boost::filesystem::recursive_directory_iterator{old_path}) {
+          const auto& path = entry.path();
+          auto rel_path_str = path.string();
+          boost::replace_first(rel_path_str, old_path.string(), "");
+          boost::filesystem::copy(path, config_folder + boost::filesystem::path::preferred_separator + rel_path_str);
+        }
+        boost::filesystem::remove_all(old_path);
+      }
+  }
 #else
     // Unix
-//  config_folder = (pathRet + "/." + CryptoNote::CRYPTONOTE_NAME);
-    config_folder = "blockchain";
+    config_folder = (pathRet + "/." + CryptoNote::CRYPTONOTE_NAME);
 #endif
 #endif
+*/ //ykb
 
     return config_folder;
   }

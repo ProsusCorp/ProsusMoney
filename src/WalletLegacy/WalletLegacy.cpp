@@ -1,22 +1,30 @@
-// Copyright (c) 2011-2016 The Cryptonote developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #include "WalletLegacy.h"
 
 #include <string.h>
 #include <time.h>
 
+#include "Logging/ConsoleLogger.h"
 #include "WalletLegacy/WalletHelper.h"
 #include "WalletLegacy/WalletLegacySerialization.h"
 #include "WalletLegacy/WalletLegacySerializer.h"
 #include "WalletLegacy/WalletUtils.h"
+#include "mnemonics/electrum-words.h"
+
+extern "C"
+{
+#include "crypto/keccak.h"
+#include "crypto/crypto-ops.h"
+}
 
 using namespace Crypto;
 
 namespace {
 
-const uint64_t ACCOUN_CREATE_TIME_ACCURACY = 24 * 60 * 60;
+const uint64_t ACCOUNT_CREATE_TIME_ACCURACY = 24 * 60 * 60;
 
 void throwNotDefined() {
   throw std::runtime_error("The behavior is not defined!");
@@ -90,15 +98,16 @@ public:
   BlockchainSynchronizer& m_sync;
 };
 
-WalletLegacy::WalletLegacy(const CryptoNote::Currency& currency, INode& node) :
+WalletLegacy::WalletLegacy(const CryptoNote::Currency& currency, INode& node, Logging::ILogger& loggerGroup) :
   m_state(NOT_INITIALIZED),
   m_currency(currency),
   m_node(node),
+  m_loggerGroup(loggerGroup),
   m_isStopping(false),
   m_lastNotifiedActualBalance(0),
   m_lastNotifiedPendingBalance(0),
-  m_blockchainSync(node, currency.genesisBlockHash()),
-  m_transfersSync(currency, m_blockchainSync, node),
+  m_blockchainSync(node, m_loggerGroup, currency.genesisBlockHash()),
+  m_transfersSync(currency, m_loggerGroup, m_blockchainSync, node),
   m_transferDetails(nullptr),
   m_transactionsCache(m_currency.mempoolTxLiveTime()),
   m_sender(nullptr),
@@ -121,7 +130,7 @@ WalletLegacy::~WalletLegacy() {
   m_blockchainSync.removeObserver(this);
   m_blockchainSync.stop();
   m_asyncContextCounter.waitAsyncContextsFinish();
-  m_sender.release();
+  m_sender.reset();
 }
 
 void WalletLegacy::addObserver(IWalletLegacyObserver* observer) {
@@ -141,12 +150,46 @@ void WalletLegacy::initAndGenerate(const std::string& password) {
     }
 
     m_account.generate();
+	//m_account.generateDeterministic();
     m_password = password;
 
     initSync();
   }
 
   m_observerManager.notify(&IWalletLegacyObserver::initCompleted, std::error_code());
+}
+
+void WalletLegacy::initAndGenerateDeterministic(const std::string& password) {
+  {
+    std::unique_lock<std::mutex> stateLock(m_cacheMutex);
+
+    if (m_state != NOT_INITIALIZED) {
+      throw std::system_error(make_error_code(error::ALREADY_INITIALIZED));
+    }
+
+    m_account.generateDeterministic();
+    m_password = password;
+
+    initSync();
+  }
+
+  m_observerManager.notify(&IWalletLegacyObserver::initCompleted, std::error_code());
+}
+
+Crypto::SecretKey WalletLegacy::generateKey(const std::string& password, const Crypto::SecretKey& recovery_param, bool recover, bool two_random) {
+  std::unique_lock<std::mutex> stateLock(m_cacheMutex);
+
+  if (m_state != NOT_INITIALIZED) {
+    throw std::system_error(make_error_code(error::ALREADY_INITIALIZED));
+  }
+
+  Crypto::SecretKey retval = m_account.generate_key(recovery_param, recover, two_random);
+  m_password = password;
+
+  initSync();
+
+  m_observerManager.notify(&IWalletLegacyObserver::initCompleted, std::error_code());
+  return retval;
 }
 
 void WalletLegacy::initWithKeys(const AccountKeys& accountKeys, const std::string& password) {
@@ -158,7 +201,7 @@ void WalletLegacy::initWithKeys(const AccountKeys& accountKeys, const std::strin
     }
 
     m_account.setAccountKeys(accountKeys);
-    m_account.set_createtime(ACCOUN_CREATE_TIME_ACCURACY);
+    m_account.set_createtime(ACCOUNT_CREATE_TIME_ACCURACY);
     m_password = password;
 
     initSync();
@@ -187,7 +230,7 @@ void WalletLegacy::initSync() {
   sub.keys = reinterpret_cast<const AccountKeys&>(m_account.getAccountKeys());
   sub.transactionSpendableAge = 1;
   sub.syncStart.height = 0;
-  sub.syncStart.timestamp = m_account.get_createtime() - ACCOUN_CREATE_TIME_ACCURACY;
+  sub.syncStart.timestamp = m_account.get_createtime() - ACCOUNT_CREATE_TIME_ACCURACY;
   
   auto& subObject = m_transfersSync.addSubscription(sub);
   m_transferDetails = &subObject.getContainer();
@@ -250,7 +293,7 @@ void WalletLegacy::shutdown() {
   m_blockchainSync.stop();
   m_asyncContextCounter.waitAsyncContextsFinish();
 
-  m_sender.release();
+  m_sender.reset();
    
   {
     std::unique_lock<std::mutex> lock(m_cacheMutex);
@@ -361,6 +404,19 @@ std::error_code WalletLegacy::changePassword(const std::string& oldPassword, con
   return std::error_code();
 }
 
+bool WalletLegacy::getSeed(std::string& electrum_words)
+{
+	std::string lang = "English";
+	Crypto::ElectrumWords::bytes_to_words(m_account.getAccountKeys().spendSecretKey, electrum_words, lang);
+
+	Crypto::SecretKey second;
+	keccak((uint8_t *)&m_account.getAccountKeys().spendSecretKey, sizeof(Crypto::SecretKey), (uint8_t *)&second, sizeof(Crypto::SecretKey));
+
+	sc_reduce32((uint8_t *)&second);
+
+	return memcmp(second.data, m_account.getAccountKeys().viewSecretKey.data, sizeof(Crypto::SecretKey)) == 0;
+}
+
 std::string WalletLegacy::getAddress() {
   std::unique_lock<std::mutex> lock(m_cacheMutex);
   throwIfNotInitialised();
@@ -382,6 +438,27 @@ uint64_t WalletLegacy::pendingBalance() {
 
   uint64_t change = m_transactionsCache.unconfrimedOutsAmount() - m_transactionsCache.unconfirmedTransactionsAmount();
   return m_transferDetails->balance(ITransfersContainer::IncludeKeyNotUnlocked) + change;
+}
+
+	uint64_t WalletLegacy::dustBalance() {
+	std::unique_lock<std::mutex> lock(m_cacheMutex);
+	throwIfNotInitialised();
+
+	std::vector<TransactionOutputInformation> outputs;
+	m_transferDetails->getOutputs(outputs, ITransfersContainer::IncludeKeyUnlocked);
+
+	uint64_t money = 0;
+	
+	for (size_t i = 0; i < outputs.size(); ++i) {
+		const auto& out = outputs[i];
+		if (!m_transactionsCache.isUsed(out)) {
+			if (/*out.amount < m_currency.defaultDustThreshold() &&*/ !is_valid_decomposed_amount(out.amount)) {
+				money += out.amount;
+			}
+		}
+	}
+
+	return money;
 }
 
 size_t WalletLegacy::getTransactionCount() {
@@ -446,6 +523,35 @@ TransactionId WalletLegacy::sendTransaction(const std::vector<WalletLegacyTransf
   }
 
   return txId;
+}
+
+	TransactionId WalletLegacy::sendDustTransaction(const WalletLegacyTransfer& transfer, uint64_t fee, const std::string& extra, uint64_t mixIn, uint64_t unlockTimestamp) {
+	std::vector<WalletLegacyTransfer> transfers;
+	transfers.push_back(transfer);
+	throwIfNotInitialised();
+
+	return sendDustTransaction(transfers, fee, extra, mixIn, unlockTimestamp);
+}
+
+TransactionId WalletLegacy::sendDustTransaction(const std::vector<WalletLegacyTransfer>& transfers, uint64_t fee, const std::string& extra, uint64_t mixIn, uint64_t unlockTimestamp) {
+	TransactionId txId = 0;
+	std::shared_ptr<WalletRequest> request;
+	std::deque<std::shared_ptr<WalletLegacyEvent>> events;
+	throwIfNotInitialised();
+
+	{
+		std::unique_lock<std::mutex> lock(m_cacheMutex);
+		request = m_sender->makeSendDustRequest(txId, events, transfers, fee, extra, mixIn, unlockTimestamp);
+	}
+
+	notifyClients(events);
+
+	if (request) {
+		m_asyncContextCounter.addAsyncContext();
+		request->perform(m_node, std::bind(&WalletLegacy::sendTransactionCallback, this, std::placeholders::_1, std::placeholders::_2));
+	}
+
+	return txId;
 }
 
 void WalletLegacy::sendTransactionCallback(WalletRequest::Callback callback, std::error_code ec) {
@@ -576,6 +682,13 @@ void WalletLegacy::notifyIfBalanceChanged() {
 
   if (prevPending != pending) {
     m_observerManager.notify(&IWalletLegacyObserver::pendingBalanceUpdated, pending);
+  }
+
+auto dust = dustBalance();
+  auto prevDust = m_lastNotifiedUnmixableBalance.exchange(dust);
+
+  if (prevDust != dust) {
+    m_observerManager.notify(&IWalletLegacyObserver::unmixableBalanceUpdated, dust);
   }
 
 }

@@ -219,3 +219,4 @@ const size_t   DIFFICULTY_CUT                                = 60;  // timestamp
 
 
 }
+
