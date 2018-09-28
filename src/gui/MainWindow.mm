@@ -1,7 +1,6 @@
-// Copyright (c) 2011-2015 The Cryptonote developers
-// Copyright (c) 2018 The ParsiCoin developers
-// Distributed under the MIT/X11 software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 #import <objc/runtime.h>
 #import <Cocoa/Cocoa.h>
@@ -9,6 +8,9 @@
 #include "mainwindow.h"
 
 namespace WalletGui {
+// Copyright (c) 2012-2017, The CryptoNote developers
+// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Distributed under the MIT/X11 software license
 
 namespace {
 
