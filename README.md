@@ -21,15 +21,18 @@ cmake ..
 make
 ```
 
-## Web sites
+## Official web sites
 * [Home](http://prosus.money)
 * [Pool](http://pool.prosus.money)
-* [Market](https://altrui.exchange)
+* [Explorer] (http://explorer.prosus.money)
 * [RTD](http://prosuscorp.com)
 
-## Social
+## Community
 * [Facebook](https://www.facebook.com/groups/prosus.money)
-* [Twitter](https://twitter.com/ProsusCorp)
 * [Telegram](https://t.me/prosus_money)
 * [Telegram (español)](https://t.me/prosus)
+* [Discord] (https://discordapp.com/channels/477481402829635604)
+* [Market](https://altrui.exchange)
+* [Docs] (http://wiki.prosus.money)
+
 
