@@ -24,15 +24,15 @@ make
 ## Official web sites
 * [Home](http://prosus.money)
 * [Pool](http://pool.prosus.money)
-* [Explorer] (http://explorer.prosus.money)
+* [Explorer](http://explorer.prosus.money)
 * [RTD](http://prosuscorp.com)
 
 ## Community
 * [Facebook](https://www.facebook.com/groups/prosus.money)
 * [Telegram](https://t.me/prosus_money)
 * [Telegram (español)](https://t.me/prosus)
-* [Discord] (https://discordapp.com/channels/477481402829635604)
+* [Discord](https://discordapp.com/channels/477481402829635604)
 * [Market](https://altrui.exchange)
-* [Docs] (http://wiki.prosus.money)
+* [Docs](http://wiki.prosus.money)
 
 
