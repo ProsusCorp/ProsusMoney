@@ -267,6 +267,39 @@ logger(INFO , BRIGHT_BLUE) <<
 
     // initialize core here
     logger(INFO) << "Initializing core...";
+
+// <ykb FIX: rescatar archivos iniciales de blockchain.
+// TODO: ‘config_folder’ was not declared in this scope
+    std::string config_folder = "blockchain";
+
+#include <stdio.h> // fopen(), fwrite(), fclose()
+//los siguientes archivos se obtuvieron ejecutando: xxd -i binario.dat cabecera.h
+#include "genesisBlockindexes.h"
+    //extern const char blockindexes_dat[];
+    //extern const size_t blockindexes_dat_len;
+#include "genesisBlocks.h"
+    //extern const char blocks_dat[];
+    //extern const size_t blocks_dat_len;
+
+FILE *archivo1;
+FILE *archivo2;
+archivo1 = fopen( (config_folder+"/"+"blockindexes.dat").c_str(), "rb+");
+archivo2 = fopen( (config_folder+"/"+"blocks.dat").c_str(), "rb+");
+if ( (archivo1 == NULL) && (archivo2 == NULL) ) {
+logger(INFO, BRIGHT_WHITE) << "blockchain-file not found, creating genesis data...";
+}
+
+if(archivo1 == NULL) { // si archivo no existe, es creado.
+    archivo1 = fopen( (config_folder+"/"+"blockindexes.dat").c_str(), "w");
+    fwrite(blockindexes_dat, 1, blockindexes_dat_len, archivo1);
+    fclose(archivo1);
+}
+if(archivo2 == NULL) { 
+    archivo2 = fopen( (config_folder+"/"+"blocks.dat").c_str(), "w");
+    fwrite(blocks_dat, 1, blocks_dat_len, archivo2);
+    fclose(archivo2);
+} // ykb>
+	  
     if (!ccore.init(coreConfig, minerConfig, true)) {
       logger(ERROR, BRIGHT_RED) << "Failed to initialize core";
       return 1;
