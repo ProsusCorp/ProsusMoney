@@ -56,7 +56,7 @@ void Settings::load() {
     }
 
     if (!m_settings.contains(OPTION_LANGUAGE)) {
-         m_currentLang = "uk";
+         m_currentLang = "es";
     }
 
     if (!m_settings.contains(OPTION_CONNECTION)) {
@@ -102,7 +102,7 @@ void Settings::load() {
   }
 
   QStringList defaultNodesList;
-  defaultNodesList << "45.7.229.167:16181" << "200.42.190.22:16181" ;
+  defaultNodesList << "pool.prosus.money:16181" << "explorer.prosus.money:16181" ;
   if (!m_settings.contains(OPTION_RPCNODES)) {
     setRpcNodesList(QStringList() << defaultNodesList);
   } else {
@@ -264,7 +264,7 @@ QString Settings::getCurrentRemoteNode() const {
         remotenode = m_settings.value(OPTION_REMOTE_NODE).toString();
     }
 	else {
-        remotenode = "165.227.80.161:16181";
+        remotenode = "explorer.prosus.money:16181";
 	}
     return remotenode;
 }

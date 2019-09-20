@@ -100,16 +100,16 @@ namespace CryptoNote {
 
 		return true;
 	}
-
-	size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const {
+// <ykb
+	size_t Currency::blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion, uint32_t height) const {
 		if (blockMajorVersion >= BLOCK_MAJOR_VERSION_3) {
-			return m_blockGrantedFullRewardZone;
+			return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V3;
 		}
 		else if (blockMajorVersion == BLOCK_MAJOR_VERSION_2) {
 			return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2;
 		}
-		else {
-			return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1;
+		else { 
+		    return CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE;
 		}
 	}
 
@@ -124,20 +124,28 @@ namespace CryptoNote {
 			return static_cast<uint32_t>(-1);
 		}
 	}
-	
-// ykb
+// ykb>
+
 bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins,
-  uint64_t fee, uint64_t& reward, int64_t& emissionChange) const {
+  uint64_t fee, uint64_t& reward, int64_t& emissionChange, uint64_t height) const {
   assert(alreadyGeneratedCoins <= m_moneySupply);
   assert(m_emissionSpeedFactor > 0 && m_emissionSpeedFactor <= 8 * sizeof(uint64_t));
 
   uint64_t baseReward = (m_moneySupply - alreadyGeneratedCoins) >> m_emissionSpeedFactor;
 
-  medianSize = std::max(medianSize, m_blockGrantedFullRewardZone);
+// <ykb
+    size_t aux_blockGrantedFullRewardZone;
+    if (height < 400128) { // FIX_BLOCK
+    aux_blockGrantedFullRewardZone = CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE; } 
+    else { 
+    aux_blockGrantedFullRewardZone = CryptoNote::parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2; }
+
+  medianSize = std::max(medianSize, aux_blockGrantedFullRewardZone);
   if (currentBlockSize > UINT64_C(2) * medianSize) {
     logger(TRACE) << "Block cumulative size is too big: " << currentBlockSize << ", expected less than " << 2 * medianSize;
     return false;
   }
+// ykb>
 
   uint64_t penalizedBaseReward = getPenalizedAmount(baseReward, medianSize, currentBlockSize);
   uint64_t penalizedFee = getPenalizedAmount(fee, medianSize, currentBlockSize);
@@ -208,7 +216,7 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
 
 		uint64_t blockReward;
 		int64_t emissionChange;
-		if (!getBlockReward(blockMajorVersion, medianSize, currentBlockSize, alreadyGeneratedCoins, fee, blockReward, emissionChange)) {
+		if (!getBlockReward(blockMajorVersion, medianSize, currentBlockSize, alreadyGeneratedCoins, fee, blockReward, emissionChange, height)) { //ykb 
 			logger(INFO) << "Block is too big";
 			return false;
 		}
@@ -689,7 +697,7 @@ bool Currency::getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size
 		cryptonoteCoinVersion(parameters::CRYPTONOTE_COIN_VERSION);
 
 		rewardBlocksWindow(parameters::CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-		blockGrantedFullRewardZone(parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE);
+		blockGrantedFullRewardZone(parameters::CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT);
 		minerTxBlobReservedSize(parameters::CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE);
 
 		numberOfDecimalPlaces(parameters::CRYPTONOTE_DISPLAY_DECIMAL_POINT);

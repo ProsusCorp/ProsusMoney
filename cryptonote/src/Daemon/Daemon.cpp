@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2017, The CryptoNote developers
-// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Copyleft (c) 2016-2019, Prosus Corp RTD
 // Distributed under the MIT/X11 software license
 
 #include "version.h"
@@ -273,7 +273,7 @@ logger(INFO , BRIGHT_BLUE) <<
     std::string config_folder = "blockchain";
 
 #include <stdio.h> // fopen(), fwrite(), fclose()
-//los siguientes archivos se obtuvieron ejecutando: xxd -i binario.dat cabecera.h
+//estos archivos se obtuvieron ejecutando: xxd -i binario.dat cabecera.h
 #include "genesisBlockindexes.h"
     //extern const char blockindexes_dat[];
     //extern const size_t blockindexes_dat_len;
@@ -289,6 +289,7 @@ if ( (archivo1 == NULL) && (archivo2 == NULL) ) {
 logger(INFO, BRIGHT_WHITE) << "blockchain-file not found, creating genesis data...";
 }
 
+
 if(archivo1 == NULL) { // si archivo no existe, es creado.
     archivo1 = fopen( (config_folder+"/"+"blockindexes.dat").c_str(), "w");
     fwrite(blockindexes_dat, 1, blockindexes_dat_len, archivo1);
@@ -298,8 +299,9 @@ if(archivo2 == NULL) {
     archivo2 = fopen( (config_folder+"/"+"blocks.dat").c_str(), "w");
     fwrite(blocks_dat, 1, blocks_dat_len, archivo2);
     fclose(archivo2);
-} // ykb>
-	  
+}
+// ykb>
+
     if (!ccore.init(coreConfig, minerConfig, true)) {
       logger(ERROR, BRIGHT_RED) << "Failed to initialize core";
       return 1;

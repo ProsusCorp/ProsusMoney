@@ -35,7 +35,7 @@ public:
 
   size_t rewardBlocksWindow() const { return m_rewardBlocksWindow; }
   size_t blockGrantedFullRewardZone() const { return m_blockGrantedFullRewardZone; }
-  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion) const;
+  size_t blockGrantedFullRewardZoneByBlockVersion(uint8_t blockMajorVersion, uint32_t height) const;
   size_t minerTxBlobReservedSize() const { return m_minerTxBlobReservedSize; }
 
   size_t numberOfDecimalPlaces() const { return m_numberOfDecimalPlaces; }
@@ -87,7 +87,7 @@ public:
   const Crypto::Hash& genesisBlockHash() const { return m_genesisBlockHash; }
 
   bool getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee,
-    uint64_t& reward, int64_t& emissionChange) const;
+    uint64_t& reward, int64_t& emissionChange, uint64_t height) const; //ykb
   size_t maxBlockCumulativeSize(uint64_t height) const;
 
   bool constructMinerTx(uint8_t blockMajorVersion, uint32_t height, size_t medianSize, uint64_t alreadyGeneratedCoins, size_t currentBlockSize,

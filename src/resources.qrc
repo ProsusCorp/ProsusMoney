@@ -47,18 +47,14 @@
         <file alias="bg.png">images/bg.png</file>
         <file alias="handle.png">images/handle.png</file>
         <file>images/cryptonote.png</file>
+        <file>images/cryptonote.icns</file>
+        <file>images/cryptonote.ico</file>
     </qresource>
     <qresource prefix="/skin">
         <file>default.qss</file>
     </qresource>
     <qresource prefix="/">
-        <file>languages/be.qm</file>
-        <file>languages/pl.qm</file>
-        <file>languages/ru.qm</file>
-        <file>languages/uk.qm</file>
-        <file>languages/de.qm</file>
         <file>languages/es.qm</file>
-        <file>languages/fr.qm</file>
     </qresource>
     <qresource prefix="/fonts">
         <file alias="mplusm">fonts/mplus-1m-medium.ttf</file>

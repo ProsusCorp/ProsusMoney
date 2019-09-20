@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
       translator.load(":/languages/" + lng + ".qm");
       translatorQt.load(":/languages/qt_" + lng + ".qm");
 
-      if(lng == "uk") {
-            QLocale::setDefault(QLocale("uk_UA"));
+      if(lng == "en") {
+            QLocale::setDefault(QLocale("en_UA"));
         } else if(lng == "ru") {
             QLocale::setDefault(QLocale("ru_RU"));
         } else if(lng == "pl") {
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
   //QLocale::setDefault(QLocale::c());
 
-  //QLocale locale = QLocale("uk_UA");
+  //QLocale locale = QLocale("en_UA");
   //QLocale::setDefault(locale);
 
   setlocale(LC_ALL, "");

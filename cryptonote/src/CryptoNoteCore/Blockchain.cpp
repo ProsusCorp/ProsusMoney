@@ -1001,7 +1001,7 @@ bool Blockchain::validate_miner_transaction(const Block& b, uint32_t height, siz
   size_t blocksSizeMedian = Common::medianValue(lastBlocksSizes);
 
   auto blockMajorVersion = getBlockMajorVersionForHeight(height);
-  if (!m_currency.getBlockReward(blockMajorVersion, blocksSizeMedian, cumulativeBlockSize, alreadyGeneratedCoins, fee, reward, emissionChange)) {
+  if (!m_currency.getBlockReward(blockMajorVersion, blocksSizeMedian, cumulativeBlockSize, alreadyGeneratedCoins, fee, reward, emissionChange, height)) { //ykb
     logger(INFO, BRIGHT_WHITE) << "block size " << cumulativeBlockSize << " is bigger than allowed for this blockchain";
     return false;
   }
@@ -1804,8 +1804,9 @@ bool Blockchain::getBlockCumulativeSize(const Block& block, size_t& cumulativeSi
 
 // Precondition: m_blockchain_lock is locked.
 bool Blockchain::update_next_comulative_size_limit() {
+  uint64_t height;
   uint8_t nextBlockMajorVersion = getBlockMajorVersionForHeight(static_cast<uint32_t>(m_blocks.size()));
-  size_t nextBlockGrantedFullRewardZone = m_currency.blockGrantedFullRewardZoneByBlockVersion(nextBlockMajorVersion);
+  size_t nextBlockGrantedFullRewardZone = m_currency.blockGrantedFullRewardZoneByBlockVersion(nextBlockMajorVersion, height); //ykb
 
   std::vector<size_t> sz;
   get_last_n_blocks_sizes(sz, m_currency.rewardBlocksWindow());
@@ -1890,7 +1891,7 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
 
   if (m_blockIndex.hasBlock(blockHash)) {
     logger(ERROR, BRIGHT_RED) <<
-      "Block " << blockHash << " already exists in blockchain.";
+      "Block-hash " << blockHash << " already exists in blockchain.";
     bvc.m_verification_failed = true;
     return false;
   }
@@ -1907,14 +1908,14 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
 
   if (blockData.previousBlockHash != getTailId()) {
     logger(INFO, BRIGHT_WHITE) <<
-      "Block " << blockHash << " has wrong previousBlockHash: " << blockData.previousBlockHash << ", expected: " << getTailId();
+      "Block-hash " << blockHash << " has wrong previousBlockHash: " << blockData.previousBlockHash << ", expected: " << getTailId();
     bvc.m_verification_failed = true;
     return false;
   }
 
   if (!check_block_timestamp_main(blockData)) {
     logger(INFO, BRIGHT_WHITE) <<
-      "Block " << blockHash << " has invalid timestamp: " << blockData.timestamp;
+      "Block-hash " << blockHash << " has invalid timestamp: " << blockData.timestamp;
     bvc.m_verification_failed = true;
     return false;
   }
@@ -1941,7 +1942,7 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
   } else {
     if (!m_currency.checkProofOfWork(m_cn_context, blockData, currentDifficulty, proof_of_work)) {
       logger(INFO, BRIGHT_WHITE) <<
-        "Block " << blockHash << ", has too weak proof of work: " << proof_of_work << ", expected difficulty: " << currentDifficulty;
+        "Block-hash " << blockHash << ", has too weak proof of work: " << proof_of_work << ", expected difficulty: " << currentDifficulty;
       bvc.m_verification_failed = true;
       return false;
     }
@@ -1951,7 +1952,7 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
 
   if (!prevalidate_miner_transaction(blockData, static_cast<uint32_t>(m_blocks.size()))) {
     logger(INFO, BRIGHT_WHITE) <<
-      "Block " << blockHash << " failed to pass prevalidation";
+      "Block-hash " << blockHash << " failed to pass prevalidation";
     bvc.m_verification_failed = true;
     return false;
   }
@@ -1977,15 +1978,27 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
 
     blob_size = toBinaryArray(block.transactions.back().tx).size();
     fee = getInputAmount(block.transactions.back().tx) - getOutputAmount(block.transactions.back().tx);
+
+// <ykb //TODO: http://explorer.prosus.money/?hash=3808aed0b00f540f76bd22f38cbb06b6557197e2f7ba05f222ad595b83498ae7#blockchain_transaction 
+//      if ((getCurrentBlockchainHeight() != 403160) && (getCurrentBlockchainHeight() != 403161) && (getCurrentBlockchainHeight() != 403162) ) { // TODO: TXhash, NO BLOCK 
     if (!checkTransactionInputs(block.transactions.back().tx)) {
       logger(INFO, BRIGHT_WHITE) <<
-        "Block " << blockHash << " has at least one transaction with wrong inputs: " << tx_id;
+        "Block-hash " << blockHash << " has at least one transaction with wrong inputs: " << tx_id;
       bvc.m_verification_failed = true;
 
       block.transactions.pop_back();
       popTransactions(block, minerTransactionHash);
-      return false;
+
+/*      if (getCurrentBlockchainHeight() == 403161) { // TODO: TXhash, NO BLOCK 
+      return true; 
+      }
+      else {
+      return false; //default
+      } */
+    return false;
     }
+//        }
+        // ykb>
 
     ++transactionIndex.transaction;
     pushTransaction(block, tx_id, transactionIndex);
@@ -2002,12 +2015,15 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
   int64_t emissionChange = 0;
   uint64_t reward = 0;
   uint64_t already_generated_coins = m_blocks.empty() ? 0 : m_blocks.back().already_generated_coins;
+// <ykb
+//if (getCurrentBlockchainHeight() != 403161) {
   if (!validate_miner_transaction(blockData, static_cast<uint32_t>(m_blocks.size()), cumulative_block_size, already_generated_coins, fee_summary, reward, emissionChange)) {
-    logger(INFO, BRIGHT_WHITE) << "Block " << blockHash << " has invalid miner transaction";
+    logger(INFO, BRIGHT_WHITE) << "Block-hash " << blockHash << " has invalid miner transaction";
     bvc.m_verification_failed = true;
     popTransactions(block, minerTransactionHash);
     return false;
   }
+//} // ykb>
 
   block.height = static_cast<uint32_t>(m_blocks.size());
   block.block_cumulative_size = cumulative_block_size;

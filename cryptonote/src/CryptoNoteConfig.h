@@ -1,5 +1,5 @@
 // Copyright (c) 2012-2017, The CryptoNote developers
-// Copyleft (c) 2016-2018, Prosus Corp RTD
+// Copyleft (c) 2015-2019, Prosus Corp RTD
 // Distributed under the MIT/X11 software license
 
 #pragma once
@@ -22,17 +22,19 @@ const size_t   BLOCKCHAIN_TIMESTAMP_CHECK_WINDOW             = 60;
 const uint64_t MONEY_SUPPLY                                  = (uint64_t)(-1); // atomic units
 const size_t   CRYPTONOTE_DISPLAY_DECIMAL_POINT              = 11;
 
+//const unsigned EMISSION_SPEED_FACTOR                       = 21; // prosus_v0.2 (año 2015)
 const unsigned EMISSION_SPEED_FACTOR                         = 18;
 static_assert(EMISSION_SPEED_FACTOR <= 8 * sizeof(uint64_t), "Bad EMISSION_SPEED_FACTOR");
 const size_t CRYPTONOTE_COIN_VERSION                         = 1; // *v0.6
 const uint64_t TAIL_EMISSION_REWARD                          = UINT64_C(10000000000); // *v0.6
 
 const size_t   CRYPTONOTE_REWARD_BLOCKS_WINDOW               = 100;
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE     = 10000; //size of block (bytes) after which reward for block calculated using block size
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V1  = 100000; // *v0.6
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2  = 1000000; // *v0.6
-const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE; // *v0.6
 const size_t   CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE        = 600;
+
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE     = 10000; // Prosus-Money v0.5x
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V2  = 2000000; // *v0.6.6
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V3  = 3000000; // *v0.7x
+const size_t   CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE; // *v0.6.8
 
 const uint64_t MINIMUM_FEE                                   = 100000;
 const uint64_t DEFAULT_DUST_THRESHOLD                        = MINIMUM_FEE;
@@ -58,12 +60,12 @@ const uint64_t CRYPTONOTE_MEMPOOL_TX_LIVETIME                = 60 * 60 * 24;    
 const uint64_t CRYPTONOTE_MEMPOOL_TX_FROM_ALT_BLOCK_LIVETIME = 60 * 60 * 24 * 7; //seconds, one week
 const uint64_t CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL = 7;  // CRYPTONOTE_NUMBER_OF_PERIODS_TO_FORGET_TX_DELETED_FROM_POOL * CRYPTONOTE_MEMPOOL_TX_LIVETIME = time to forget tx
 
-const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 30 / 100;
+const size_t   FUSION_TX_MAX_SIZE                            = CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_CURRENT * 30 / 100;
 const size_t   FUSION_TX_MIN_INPUT_COUNT                     = 12;
 const size_t   FUSION_TX_MIN_IN_OUT_COUNT_RATIO              = 4;
 
-const uint32_t UPGRADE_HEIGHT_V2                             = 1000000; // (testnet) Diff algo Change from cryptonote default to lwma
-const uint32_t UPGRADE_HEIGHT_V3                             = 2000000; // (testnet) POW algo Change from cryptonote default to cnv7 Anti ASIC
+const uint32_t UPGRADE_HEIGHT_V2                             = 400000; // TODO: Diff algo Change from cryptonote default to lwma
+const uint32_t UPGRADE_HEIGHT_V3                             = 405400; // TODO: POW algo Change from cryptonote default to cnv7 Anti ASIC
 const unsigned UPGRADE_VOTING_THRESHOLD                      = 90; // *v0.6 percent
 const uint32_t UPGRADE_VOTING_WINDOW                         = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
 const uint32_t UPGRADE_WINDOW                                = EXPECTED_NUMBER_OF_BLOCKS_PER_DAY;  // blocks
@@ -75,7 +77,7 @@ const char     CRYPTONOTE_POOLDATA_FILENAME[]                = "poolstate.bin";
 const char     P2P_NET_DATA_FILENAME[]                       = "p2pstate.bin";
 const char     CRYPTONOTE_BLOCKCHAIN_INDICES_FILENAME[]      = "blockchainindices.dat";
 const char     MINER_CONFIG_FILE_NAME[]                      = "miner_conf.json";
-} // parameters
+} // namespace parameters>
 
 const char     CRYPTONOTE_NAME[]                             = "prosus";
 
@@ -110,10 +112,10 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1
 const uint32_t P2P_IP_BLOCKTIME                              = (60 * 60 * 24);//24 hour *v0.6
 const uint32_t P2P_IP_FAILS_BEFORE_BLOCK                     = 10; // *v0.6
 
-const std::initializer_list<const char*> SEED_NODES = {
-  "200.42.190.22:16180",
-  "45.7.229.167:16180",
-  "172.104.217.157:16180",
+const std::initializer_list<const char*> SEED_NODES = { //usar sólo IP, no URL
+  "18.221.201.1:16180",
+  "18.188.208.249:16180",
+  "18.224.229.139:16180",
   "165.227.80.161:16180"
 };
 
@@ -127,16 +129,26 @@ __attribute__((unused))
 #endif
 
 const std::initializer_list<CheckpointData> CHECKPOINTS = {
-	{   1626, "55c456b87abc26b4ff62ad53b75c6f1033536507f60d7f7f1aed22950f4994bd" }, // cambiamos recompensa
-	{   3150, "6571b301402d7b677c53333cdb59f811dc902ac63ab5262ece30a4f66940f8f6" }, // secuestramos red
-	{ 100000, "7da57e40ecd2b332370bed0351c101d4e122129eee05a721f1a49dd4e524c143" }, // cien mil
-	{ 164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }, // primer stuck, parchamos
-	{ 200000, "e0fb878c4de045c471dc72e3186b4aafcc55001d4f8707c73e3ba9386c7246b0" }, // doscientos mil
-	{ 230106, "fcdd9a8a6753c2c046dfe6b961c713a4e4da57377b6be1e3ad5b5273f57bdef0" }, // segundo stuck, parchamos
-//	{ 300000, "0000000000000000000000000000000000000000000000000000000000000000" },
-//	{ 400000, "0000000000000000000000000000000000000000000000000000000000000000" },
-//	{ 500000, "0000000000000000000000000000000000000000000000000000000000000000" }
+	{    1626, "55c456b87abc26b4ff62ad53b75c6f1033536507f60d7f7f1aed22950f4994bd" }, // cambiamos recompensa
+	{    3150, "6571b301402d7b677c53333cdb59f811dc902ac63ab5262ece30a4f66940f8f6" }, // secuestramos red
+//  {  100000, "7da57e40ecd2b332370bed0351c101d4e122129eee05a721f1a49dd4e524c143" },
+	{  164520, "b41826f1c6411d6e31fae5b887020d33324996e28415941c73a9a00737a468c1" }, // primer stuck, parchamos
+//  {  200000, "e0fb878c4de045c471dc72e3186b4aafcc55001d4f8707c73e3ba9386c7246b0" },
+	{  230106, "fcdd9a8a6753c2c046dfe6b961c713a4e4da57377b6be1e3ad5b5273f57bdef0" }, // segundo stuck, parchamos
+//  {  300000, "f7f29b6da24f8594b8f5e2528c9cc6892f34089c4e331fe82130607396e22667" },
+//  {  400000, "daababef97070394b438d1ac7b5550519ae58af819053166c89e660bc7dbed9b" }, 
+//	{  400165, "ff6c7a126d7ce3ca2d228ab849291cbb8146e238a5013641f1cae44206ae945c" }, // Reward_Zone_v2
+//	{  400500, "8ea13fc4aa4c50e689ab87f2a58d3d9a1a1b81460abed4a0776965b8c8c6b57f" },
+//	{  600000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{  700000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{  800000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{  900000, "0000000000000000000000000000000000000000000000000000000000000000" },
+//	{ 1000000, "0000000000000000000000000000000000000000000000000000000000000000" }
 };
-} // www.ProsusCorp.com
+} // namespace CryptoNote>
 
 #define ALLOW_DEBUG_COMMANDS
+
+
+
+ 

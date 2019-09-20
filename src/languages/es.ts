@@ -318,7 +318,7 @@ Por favor, espera...</translation>
     </message>
     <message>
         <source>Wallet path:</source>
-        <translation>Camino de monedero:</translation>
+        <translation>Ruta del archivo:</translation>
     </message>
     <message>
         <source>...</source>
@@ -349,7 +349,7 @@ Por favor, espera...</translation>
     </message>
     <message>
         <source>Wallet path:</source>
-        <translation>Camino de monedero:</translation>
+        <translation>Ruta del archivo:</translation>
     </message>
     <message>
         <source>Import a tracking key of a wallet to see all its incoming transactions. It doesn&apos;t allow spending funds.</source>
@@ -495,15 +495,15 @@ Por favor, espera...</translation>
     </message>
     <message>
         <source>Start on system login</source>
-        <translation>Comenzar login del sistema</translation>
+        <translation>Ejecutar al iniciar sistema operativo</translation>
     </message>
     <message>
         <source>Minimize to tray</source>
-        <translation>Minimizar a la bandeja</translation>
+        <translation>Iconizar al minimizar ventana</translation>
     </message>
     <message>
         <source>Close to tray</source>
-        <translation>Cerrar de la bandeja</translation>
+        <translation>Iconizar al cerrar ventana</translation>
     </message>
     <message>
         <source>Import private key</source>
@@ -1392,7 +1392,7 @@ Do you want to go to download page?</source>
     <name>WalletGui::ConfirmSendDialog</name>
     <message>
         <source>Confirm sending %1 xPR</source>
-        <translation>Confirma el envío de %1 xPR</translation>
+        <translation>Confirma el envío de xPR</translation>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Payment ID: %1&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
@@ -1400,7 +1400,6 @@ Do you want to go to download page?</source>
     </message>
     <message>
         <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Are you sure you want to send &lt;strong&gt;without Payment ID&lt;/strong&gt;?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translatorcomment>Нужен знак &quot;¿&quot; перед вопросом</translatorcomment>
         <translation>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;¿Estás seguro de que desea enviar &lt;strong&gt;sin ID de pago&lt;/strong&gt;?&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
@@ -1738,7 +1737,7 @@ Are you sure?</source>
     <name>WalletGui::SendFrame</name>
     <message>
         <source>Invalid recipient address</source>
-        <translation>Dirección del destinatario inválido</translation>
+        <translation>La dirección del destinatario no es válida</translation>
     </message>
     <message>
         <source>Incorrect fee value</source>

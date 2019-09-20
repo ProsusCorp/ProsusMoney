@@ -74,7 +74,7 @@ namespace CryptoNote {
      virtual bool getBlockSize(const Crypto::Hash& hash, size_t& size) override;
      virtual bool getAlreadyGeneratedCoins(const Crypto::Hash& hash, uint64_t& generatedCoins) override;
      virtual bool getBlockReward(uint8_t blockMajorVersion, size_t medianSize, size_t currentBlockSize, uint64_t alreadyGeneratedCoins, uint64_t fee,
-                                 uint64_t& reward, int64_t& emissionChange) override;
+                                 uint64_t& reward, int64_t& emissionChange, uint64_t height) override; //ykb
      virtual bool scanOutputkeysForIndices(const KeyInput& txInToKey, std::list<std::pair<Crypto::Hash, size_t>>& outputReferences) override;
      virtual bool getBlockDifficulty(uint32_t height, difficulty_type& difficulty) override;
      virtual bool getBlockContainingTx(const Crypto::Hash& txId, Crypto::Hash& blockId, uint32_t& blockHeight) override;
