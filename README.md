@@ -11,7 +11,7 @@ Mnemotechnic for Prosus Currency is **xPR**.
 
 If you don't have the Source repositories installed, you should execute:
 
-'''sudo add-apt-repository universe '''
+```sudo add-apt-repository universe```
 
 Then, do the following:
 
