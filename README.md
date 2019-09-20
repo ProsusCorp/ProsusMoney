@@ -7,13 +7,19 @@ Prosus was created in Chile (2016) as a means of payment, and its goal would be 
 
 Mnemotechnic for Prosus Currency is **xPR**.
 
+## 💾 Install on Ubuntu 16 or newer
 
-## 💾 Install on Ubuntu 16 
+If you don't have the Source repositories installed, you should execute:
+
+'''sudo add-apt-repository universe '''
+
+Then, do the following:
+
 ```
 (sudo)
 apt-get update
 apt-get upgrade
-apt-get install build-essential git cmake libboost1.58-all-dev
+apt-get install build-essential git cmake libboost-all-dev
 git clone https://github.com/ProsusCorp/prosus
 cd prosus
 mkdir build && cd build
