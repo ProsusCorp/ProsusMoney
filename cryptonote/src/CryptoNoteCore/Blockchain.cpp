@@ -493,9 +493,8 @@ bool Blockchain::init(const std::string& config_folder, bool load_existing) {
   }
 
   logger(INFO, BRIGHT_GREEN)
-    << "Blockchain initialized. last block: " << m_blocks.size() - 1 << ", "
-    << Common::timeIntervalToString(timestamp_diff)
-    << " time ago, current difficulty: " << getDifficultyForNextBlock();
+    << "Blockchain initialized. Last block: " << m_blocks.size() - 1 
+    << " (" << Common::timeIntervalToString(timestamp_diff) << " time ago)";
   return true;
 }
 
@@ -1979,8 +1978,6 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
     blob_size = toBinaryArray(block.transactions.back().tx).size();
     fee = getInputAmount(block.transactions.back().tx) - getOutputAmount(block.transactions.back().tx);
 
-// <ykb //TODO: http://explorer.prosus.money/?hash=3808aed0b00f540f76bd22f38cbb06b6557197e2f7ba05f222ad595b83498ae7#blockchain_transaction 
-//      if ((getCurrentBlockchainHeight() != 403160) && (getCurrentBlockchainHeight() != 403161) && (getCurrentBlockchainHeight() != 403162) ) { // TODO: TXhash, NO BLOCK 
     if (!checkTransactionInputs(block.transactions.back().tx)) {
       logger(INFO, BRIGHT_WHITE) <<
         "Block-hash " << blockHash << " has at least one transaction with wrong inputs: " << tx_id;
@@ -1989,16 +1986,8 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
       block.transactions.pop_back();
       popTransactions(block, minerTransactionHash);
 
-/*      if (getCurrentBlockchainHeight() == 403161) { // TODO: TXhash, NO BLOCK 
-      return true; 
-      }
-      else {
-      return false; //default
-      } */
     return false;
     }
-//        }
-        // ykb>
 
     ++transactionIndex.transaction;
     pushTransaction(block, tx_id, transactionIndex);
@@ -2015,15 +2004,13 @@ bool Blockchain::pushBlock(const Block& blockData, const std::vector<Transaction
   int64_t emissionChange = 0;
   uint64_t reward = 0;
   uint64_t already_generated_coins = m_blocks.empty() ? 0 : m_blocks.back().already_generated_coins;
-// <ykb
-//if (getCurrentBlockchainHeight() != 403161) {
+
   if (!validate_miner_transaction(blockData, static_cast<uint32_t>(m_blocks.size()), cumulative_block_size, already_generated_coins, fee_summary, reward, emissionChange)) {
     logger(INFO, BRIGHT_WHITE) << "Block-hash " << blockHash << " has invalid miner transaction";
     bvc.m_verification_failed = true;
     popTransactions(block, minerTransactionHash);
     return false;
   }
-//} // ykb>
 
   block.height = static_cast<uint32_t>(m_blocks.size());
   block.block_cumulative_size = cumulative_block_size;
