@@ -706,15 +706,14 @@ bool core::update_miner_block_template() {
 
 bool core::on_idle() {
   if (!m_starter_message_showed) {
-    logger(INFO) << ENDL << "**********************************************************************" << ENDL
-      << "The daemon will start synchronizing with the network. It may take up to several hours." << ENDL
-      << ENDL
-      << "You can set the level of process detailization* through \"set_log <level>\" command*, where <level> is between 0 (no details) and 4 (very verbose)." << ENDL
-      << ENDL
-      << "Use \"help\" command to see the list of available commands." << ENDL
-      << ENDL
-      << "Note: in case you need to interrupt the process, use \"exit\" command. Otherwise, the current progress won't be saved." << ENDL
-      << "**********************************************************************";
+    logger(INFO) 
+      << ENDL 
+      << "****************************************************************" << ENDL
+      << "The daemon will start synchronizing with the network. " << ENDL
+      << "You can set the level of debug info through \"set_log <level>\" ," << ENDL
+      << "where <level> is between 0 (no details) and 4 (very verbose)." << ENDL
+      << "****************************************************************" << ENDL
+      << ENDL ;
     m_starter_message_showed = true;
   }
 

@@ -154,9 +154,9 @@ bool CryptoNoteProtocolHandler::process_payload_sync_data(const CORE_SYNC_DATA& 
     int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(get_current_blockchain_height());
 
     logger(diff >= 0 ? (is_inital ? Logging::INFO : Logging::DEBUGGING) : Logging::TRACE, Logging::BRIGHT_YELLOW) << context <<
-      "Sync data returned unknown top block: " << get_current_blockchain_height() << " -> " << hshd.current_height
-      << " [" << std::abs(diff) << " blocks (" << std::abs(diff) / (24 * 60 * 60 / m_currency.difficultyTarget()) << " days) "
-      << (diff >= 0 ? std::string("behind") : std::string("ahead")) << "] " << std::endl << "SYNCHRONIZATION started";
+      "returned new top block: " << get_current_blockchain_height() << " -> " << hshd.current_height
+      << " [" << std::abs(diff) << " blocks " << (diff >= 0 ? std::string("behind") : std::string("ahead")) << "] " 
+      << std::endl << "SYNCHRONIZATION started";
 
     logger(Logging::DEBUGGING) << "Remote top block height: " << hshd.current_height << ", id: " << hshd.top_id;
     //let the socket to send response to handshake, but request callback, to let send request data after response
@@ -531,14 +531,14 @@ bool CryptoNoteProtocolHandler::request_missing_objects(CryptoNoteConnectionCont
 bool CryptoNoteProtocolHandler::on_connection_synchronized() {
   bool val_expected = false;
   if (m_synchronized.compare_exchange_strong(val_expected, true)) {
-    logger(Logging::INFO) << ENDL << "**********************************************************************" << ENDL
-      << "You are now synchronized with the network. You may now start simplewallet." << ENDL
-      << ENDL
-      << "Please note, that the blockchain will be saved only after you quit the daemon with \"exit\" command or if you use \"save\" command." << ENDL
-      << "Otherwise, you will possibly need to synchronize the blockchain again." << ENDL
-      << ENDL
-      << "Use \"help\" command to see the list of available commands." << ENDL
-      << "**********************************************************************";
+    logger(Logging::INFO) << ENDL 
+      << "****************************************************************" << ENDL
+      << "You are now synchronized with the network. " << ENDL
+      << "Use \"help\" command to see the list of available options." << ENDL
+      << "The blockchain will be saved only after you quit the " << ENDL
+      << "daemon with \"exit\" command or if you use \"save\" command." << ENDL
+      << "****************************************************************" << ENDL
+      << ENDL ;
     m_core.on_synchronized();
 
     uint32_t height;

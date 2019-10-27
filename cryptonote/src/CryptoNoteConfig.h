@@ -112,11 +112,9 @@ const char     P2P_STAT_TRUSTED_PUB_KEY[]                    = "8f80f9a5a434a9f1
 const uint32_t P2P_IP_BLOCKTIME                              = (60 * 60 * 24);//24 hour *v0.6
 const uint32_t P2P_IP_FAILS_BEFORE_BLOCK                     = 10; // *v0.6
 
-const std::initializer_list<const char*> SEED_NODES = { //usar sólo IP, no URL
-  "18.221.201.1:16180",
-  "18.188.208.249:16180",
-  "18.224.229.139:16180",
-  "165.227.80.161:16180"
+const std::initializer_list<const char*> SEED_NODES = { 
+    "explorer.prosus.money:16180",
+    "prosus.altrui.exchange:16180"
 };
 
 struct CheckpointData {
