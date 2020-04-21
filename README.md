@@ -3,9 +3,9 @@
 
 <img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
 
-Cryptocurrency created in Chile (2016) as a means of payment, focused on training users without technical knowledge. Requires few resources to function. This project promote a future resource-based economy.
+Cryptocurrency created in Chile (2016) as a means of payment, focused on training users without technical knowledge. Low hardware requirement. This project promote a future resource-based economy.
 
-Mnemotechnic for Prosus Currency is **xPR**.
+Mnemotechnic for Prosus Money is **xPR**.
 
 
 ## 💾 Install on Ubuntu 16 
@@ -32,7 +32,10 @@ mkdir build && cd build
 cmake ..
 make
 ```
-[(other builds)](http://wiki.prosus.money)
+
+
+## 💾 [(other builds)](http://wiki.prosus.money)
+
 
 ## Official web sites
 * [Home](http://prosus.money)
