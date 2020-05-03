@@ -17,7 +17,7 @@ apt-get install build-essential git cmake libboost1.58-all-dev
 git clone https://github.com/ProsusCorp/prosus
 ```
 
-### GUI version (graphic user interface)
+#### GUI version (graphic user interface)
 ```
 cd prosus
 mkdir build && cd build
@@ -25,7 +25,7 @@ cmake ..
 make
 ```
 
-### CLI version (console)
+#### CLI version (console)
 ```
 cd prosus && cd cryptonote
 mkdir build && cd build
@@ -34,17 +34,20 @@ make
 ```
 
 
-## 💾 [(other builds)](http://wiki.prosus.money)
+## 💾 other OS
+[Windows](http://wiki.prosus.money)
+
+[macOS](http://wiki.prosus.money)
 
 
-## Official web sites
+## :star: Official web sites 
 * [Home](http://prosus.money)
 * [Block Explorer](http://explorer.prosus.money)
 * [Docs](http://wiki.prosus.money)
 * [Smart Energy Project](http://prosus.energy)
 * [Research and Technological Development](http://prosuscorp.com)
 
-## Community
+## :family: Community
 * [Facebook](https://www.facebook.com/groups/prosus.money)
 * [Telegram](https://t.me/prosus_money)
 * [Telegram (español)](https://t.me/prosus)
