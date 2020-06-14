@@ -8,12 +8,28 @@ Cryptocurrency created in Chile (2016) as a means of payment, focused on trainin
 Mnemotechnic for Prosus Money is **xPR**.
 
 
-## 💾 Install on Ubuntu 16 
+## 💾 Install on Ubuntu
+
+If you don't have the Source repositories (Which is the Ubuntu Default) installed, you should execute:
+
+This is the repository for the C libboost libraries, needed to compile.
+
+```
+sudo add-apt-repository -s 'deb http://us.archive.ubuntu.com/ubuntu/ focal universe'
+```
+
+Now we need like 300MB of the QT Graphical interface libraries
+
+```
+sudo apt install qtbase5-dev qt5-default qtdeclarative5-dev qml-module-qtquick-controls qml-module-qtquick-controls2 qml-module-qtquick-dialogs qml-module-qtquick-xmllistmodel qml-module-qt-labs-settings qml-module-qt-labs-folderlistmodel qttools5-dev-tools qml-module-qtquick-templates2 libqt5svg5-dev
+```
+Then, do the following:
+
 ```
 (sudo)
 apt-get update
 apt-get upgrade
-apt-get install build-essential git cmake libboost1.58-all-dev
+apt-get install build-essential git cmake libboost-all-dev
 git clone https://github.com/ProsusCorp/prosus
 ```
 
@@ -35,12 +51,12 @@ make
 
 
 ## 💾 other OS
-[Windows](http://wiki.prosus.money)
+[Windows](http://wiki.prosus.money) (Compilation instructions coming shortly)
 
-[macOS](http://wiki.prosus.money)
+[macOS](http://wiki.prosus.money) (Compilation instructions coming shortly)
 
 
-## :star: Official web sites 
+## :star: Official web sites
 * [Home](http://prosus.money)
 * [Block Explorer](http://explorer.prosus.money)
 * [Docs](http://wiki.prosus.money)
@@ -53,4 +69,3 @@ make
 * [Telegram (español)](https://t.me/prosus)
 * [Discord](https://discordapp.com/channels/477481402829635604)
 * [Market](https://prosus.dinova.cl)
-
