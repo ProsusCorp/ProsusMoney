@@ -8,7 +8,7 @@ Cryptocurrency created in Chile (2016) as a means of payment, focused on trainin
 Mnemotechnic for Prosus Money is **xPR**.
 
 
-## 💾 Install on Ubuntu
+## 💾 Installation on Ubuntu
 
 If you don't have the Source repositories (Which is the Ubuntu Default) installed, you should execute:
 
@@ -37,7 +37,7 @@ git clone https://github.com/ProsusCorp/prosus
 ```
 cd prosus
 mkdir build && cd build
-cmake ..
+cmake .. -DBoost_NO_BOOST_CMAKE=BOOL:ON
 make
 ```
 
@@ -45,10 +45,10 @@ make
 ```
 cd prosus && cd cryptonote
 mkdir build && cd build
-cmake ..
+cmake .. -DBoost_NO_BOOST_CMAKE=BOOL:ON
 make
 ```
-
+**NOTE: The "-DBoost_NO_BOOST_CMAKE=BOOL:ON" is to enable the use of libboost 1.71.0, otherwise it won't compile.**
 
 ## 💾 other OS
 [Windows](http://wiki.prosus.money) (Compilation instructions coming shortly)
