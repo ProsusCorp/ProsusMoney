@@ -15,7 +15,7 @@ If you don't have the Source repositories (Which is the Ubuntu Default) installe
 This is the repository for the C libboost libraries, needed to compile.
 
 ```
-sudo add-apt-repository -s 'deb http://us.archive.ubuntu.com/ubuntu/ focal universe'
+sudo add-apt-repository -s 'deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -sc) universe'
 ```
 
 Now we need like 300MB of the QT Graphical interface libraries
@@ -30,8 +30,10 @@ Then, do the following:
 apt-get update
 apt-get upgrade
 apt-get install build-essential git cmake libboost-all-dev
-git clone https://github.com/ProsusCorp/prosus
+git clone https://github.com/ProsusCorp/prosus.money.git
 ```
+
+Next step is to compile the software, depending on what you want to use, do the following:
 
 #### GUI version (graphic user interface)
 ```
@@ -55,6 +57,65 @@ make
 
 [macOS](http://wiki.prosus.money) (Compilation instructions coming shortly)
 
+## Downloading the daemon directly (without compiling)
+
+____Download_____
+```
+wget http://prosus.money/wp-content/uploads/2019/10/Prosus_0.7.2-cli_Ubuntu16.zip
+unzip Prosus_0.7.2-cli_Ubuntu16.zip
+```
+
+## Running the daemon
+
+```
+./prosus-daemon
+```
+
+___Create wallet___
+
+```
+./prosus-wallet
+```
+
+
+___Make it resident___
+[How to run this as a service; ]
+
+```
+./prosus-daemon --add-exclusive-node 200.42.190.22
+```
+
+___How to run as a service in the background; so it keeps running when leaving the console___
+
+```
+nohup setsid ./prosus-daemon --add-exclusive-node 200.42.190.22
+```
+
+___List all system processes___
+
+```
+ps aux
+```
+
+___kill a prosus-daemon(closes the daemon process)___
+
+```
+pkill -9 prosus-daemon
+```
+
+___Block IPs with iptables ( Iptables are temporary.)___
+
+```
+sudo iptables -A INPUT -s 45.55.36.111 -j DROP
+sudo iptables -A INPUT -s 35.231.66.169 -j DROP
+sudo iptables -A INPUT -s 13.57.179.95 -j DROP
+```
+___SOLO MINING___
+
+Run as a service in the background, mining directly from the daemon to an external wallet
+```
+nohup setsid ./prosus-daemon --start-mining ProsusxxxxxxxxADDRESS -t 2 &
+```
 
 ## :star: Official web sites
 * [Home](http://prosus.money)
