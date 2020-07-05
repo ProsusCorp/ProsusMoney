@@ -1,4 +1,22 @@
-## 💾 Installation on Ubuntu
+
+# 1 💾 ESPECIFIC BUILD PARAMETERS
+
+## 1.1 💾 Build on Windows
+
+Dependencies: MSVC 2013 or later, CMake 2.8.6 or later, and Boost 1.55. You may download them from:
+http://www.microsoft.com/
+http://www.cmake.org/
+http://www.boost.org/
+
+Open command line (cmd.exe), change to a directory where CMakeList.txt file is located, and execute this:
+
+mkdir build
+cd build
+cmake -G "Visual Studio 12 Win64" ..
+make
+
+----
+## 1.2 💾 Build on Debian/Ubuntu
 
 If you don't have the Source repositories (Which is the Ubuntu Default) installed, you should execute:
 
@@ -42,12 +60,16 @@ make
 ```
 **NOTE: The "-DBoost_NO_BOOST_CMAKE=BOOL:ON" is to enable the use of libboost 1.71.0, otherwise it won't compile.**
 
-## 💾 other OS
-[Windows](http://wiki.prosus.money) (Compilation instructions coming shortly)
+----
+## 1.3 💾 Build on macOS
 
 [macOS](http://wiki.prosus.money) (Compilation instructions coming shortly)
 
-## Downloading the daemon directly (without compiling)
+
+----
+# 2 :snail: ESPECIFIC RUN PARAMETERS
+
+## 2.1 :snail: DEBIAN: Downloading the daemon directly (without compiling)
 
 ____Download_____
 ```
@@ -55,7 +77,8 @@ wget http://prosus.money/wp-content/uploads/2019/10/Prosus_0.7.2-cli_Ubuntu16.zi
 unzip Prosus_0.7.2-cli_Ubuntu16.zip
 ```
 
-## Running the daemon
+----
+## 2.2 :snail: DEBIAN: Running the daemon
 
 ```
 ./prosus-daemon
@@ -105,3 +128,4 @@ ___SOLO MINING___
 Run as a service in the background, mining directly from the daemon to an external wallet
 ```
 nohup setsid ./prosus-daemon --start-mining ProsusxxxxxxxxADDRESS -t 2 &
+
