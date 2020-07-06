@@ -4,17 +4,17 @@
 ## 1.1 💾 Build on Windows
 
 Dependencies: MSVC 2013 or later, CMake 2.8.6 or later, and Boost 1.55. You may download them from:
-http://www.microsoft.com/
-http://www.cmake.org/
-http://www.boost.org/
+* http://www.microsoft.com/
+* http://www.cmake.org/
+* http://www.boost.org/
 
 Open command line (cmd.exe), change to a directory where CMakeList.txt file is located, and execute this:
-
+```
 mkdir build
 cd build
 cmake -G "Visual Studio 12 Win64" ..
 make
-
+```
 ----
 ## 1.2 💾 Build on Debian/Ubuntu
 
@@ -58,7 +58,24 @@ mkdir build && cd build
 cmake .. -DBoost_NO_BOOST_CMAKE=BOOL:ON
 make
 ```
-**NOTE: The "-DBoost_NO_BOOST_CMAKE=BOOL:ON" is to enable the use of libboost 1.71.0, otherwise it won't compile.**
+----
+**NOTE 1: The "-DBoost_NO_BOOST_CMAKE=BOOL:ON" is to enable the use of libboost 1.71.0, otherwise it won't compile.**
+
+**NOTE 2: For low disc space, install especific modules from Boost library **
+```
+apt-get install -y \
+libboost-dev \
+libboost-regex-dev \
+libboost-serialization-dev \
+libboost-program-options-dev \
+libboost-coroutine-dev \
+libboost-context-dev \
+libboost-system-dev \
+libboost-filesystem-dev \
+libboost-thread-dev \
+libboost-date-time-dev \
+libboost-chrono-dev 
+```
 
 ----
 ## 1.3 💾 Build on macOS
