@@ -47,5 +47,5 @@ make
 * [Facebook](https://www.facebook.com/groups/prosus.money)
 * [Telegram](https://t.me/prosus_money)
 * [Telegram (español)](https://t.me/prosus)
-* [Discord](https://discordapp.com/channels/477481402829635604)
-* [Market](https://prosus.dinova.cl)
+* [Discord](https://discord.com/channels/395402947971776515/713085376209616907)
+* [Marketplace](https://prosus.dinova.cl)
