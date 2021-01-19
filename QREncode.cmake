@@ -10,8 +10,10 @@ list(APPEND my_definitions "STATIC_IN_RELEASE=static")
 list(APPEND my_definitions "MAJOR_VERSION=3")
 list(APPEND my_definitions "MINOR_VERSION=4")
 list(APPEND my_definitions "MICRO_VERSION=0")
+
 if(WIN32)
   list(APPEND my_definitions "inline=__inline")
 endif(WIN32)
+
 add_library(${QRENCODE_LIB} ${QRENCODE_SOURCES} ${QRENCODE_HEADERS})
 set_target_properties(${QRENCODE_LIB} PROPERTIES COMPILE_DEFINITIONS "${my_definitions}")
