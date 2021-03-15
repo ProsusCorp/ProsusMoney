@@ -1,0 +1,24 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Prosus_Money
+GenericName=Prosus_Money
+Name[uk]=Prosus_Money
+Name[ru]=Prosus_Money
+Name[pl]=Prosus_Money
+Name[be]=Prosus_Money
+Name[de]=Prosus_Money
+Name[es]=Prosus_Money
+Comment=Prosus GUI Wallet
+Comment[uk]=Prosus GUI Wallet
+Comment[ru]=Prosus GUI Wallet
+Comment[pl]=Prosus GUI Wallet
+Comment[be]=Prosus GUI Wallet
+Comment[de]=Prosus GUI Wallet
+Comment[es]=Prosus GUI Wallet
+Exec=Prosus_Money %U
+Terminal=false
+Type=Application
+Icon=prosus
+MimeType=x-scheme-handler/Prosus_Money;
+Categories=Office;Finance;
+Version=2021.a

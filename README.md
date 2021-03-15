@@ -1,20 +1,23 @@
 
 # PROSUS MONEY
 
-<img src="http://prosus.money/wp-content/uploads/2018/03/Prosus-header.jpg">
+<img src="http://prosus.money/wp-content/uploads/2021/03/splash.png">
 
 Cryptocurrency created in Chile (2016) as a means of payment, focused on training users without technical knowledge. Low hardware requirement. This project promote a future resource-based economy.
 
-Mnemotechnic for Prosus Money is **xPR**.
+The Prosus Money ticker symbol is **xPR** or **PROSUS** .
 
 ----
 
 ## 💾 Build on Debian/Ubuntu (for other OS, see: [BUILD.md](BUILD.md) )
+
+
+### Dependencies
 ```
 (sudo)
 apt-get update
 apt-get upgrade
-apt-get install build-essential git cmake libboost-all-dev
+apt-get install build-essential git cmake libboost-all-dev qt5-default
 git clone https://github.com/ProsusCorp/prosus.money.git prosus
 ```
 
@@ -28,7 +31,7 @@ make
 
 ### CLI version (console)
 ```
-cd prosus && cd cryptonote
+cd prosus && cd cli
 mkdir build && cd build
 cmake ..
 make
