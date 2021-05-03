@@ -536,7 +536,7 @@ bool CryptoNoteProtocolHandler::on_connection_synchronized() {
       << "You are now synchronized with the network. " << ENDL
       << "Use \"help\" command to see the list of available options." << ENDL
       << "The blockchain will be saved only after you quit the " << ENDL
-      << "daemon with \"exit\" command or if you use \"save\" command." << ENDL
+      << "daemon with \"exit\" command, or if you cancel the process using CTRL-C." << ENDL
       << "****************************************************************" << ENDL
       << ENDL ;
     m_core.on_synchronized();
