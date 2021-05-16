@@ -128,15 +128,15 @@ void wallet_rpc_server::processRequest(const CryptoNote::HttpRequest& request, C
 		{
 			{ "getbalance"	   , makeMemberMethod(&wallet_rpc_server::on_getbalance)	  },
 			{ "transfer"	   , makeMemberMethod(&wallet_rpc_server::on_transfer)		  },
-			{ "store"		   , makeMemberMethod(&wallet_rpc_server::on_store)			  },
+			{ "store"	   , makeMemberMethod(&wallet_rpc_server::on_store)		  },
 			{ "stop_wallet"    , makeMemberMethod(&wallet_rpc_server::on_stop_wallet)	  },
 			{ "get_payments"   , makeMemberMethod(&wallet_rpc_server::on_get_payments)	  },
 			{ "get_transfers"  , makeMemberMethod(&wallet_rpc_server::on_get_transfers)	  },
-			{ "get_transaction", makeMemberMethod(&wallet_rpc_server::on_get_transaction) },
+			{ "get_transaction", makeMemberMethod(&wallet_rpc_server::on_get_transaction)	  },
 			{ "get_height"	   , makeMemberMethod(&wallet_rpc_server::on_get_height)	  },
 			{ "get_address"	   , makeMemberMethod(&wallet_rpc_server::on_get_address)	  },
 			{ "query_key"      , makeMemberMethod(&wallet_rpc_server::on_query_key)		  },
-			{ "reset"		   , makeMemberMethod(&wallet_rpc_server::on_reset)			  },
+			{ "reset"	   , makeMemberMethod(&wallet_rpc_server::on_reset)		  },
 			{ "get_paymentid"  , makeMemberMethod(&wallet_rpc_server::on_gen_paymentid)	  },
 		};
 
