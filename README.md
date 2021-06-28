@@ -3,7 +3,7 @@
 
 <img src="http://prosus.money/wp-content/uploads/2021/03/splash.png">
 
-Cryptocurrency created in Chile (2016) as a blockchain laboratory, for common people as user target. Low hardware requirement. This project promote resource-based economy research.
+Cryptocurrency created in Chile (2016) as a blockchain laboratory, for ordinary people as a target user. Low hardware requirement. This project promotes research on the resource-based economy.
 
 The Prosus Money ticker symbol is **xPR** or **PROSUS** .
 
@@ -49,5 +49,5 @@ make
 * [Facebook](https://www.facebook.com/groups/prosus.money)
 * [Telegram](https://t.me/prosus_money)
 * [Telegram (español)](https://t.me/prosus)
-* [Discord](https://discord.com/channels/395402947971776515/713085376209616907)
+* [Discord](https://discord.com/channels/748936986328301638/748981559599824998)
 * [Marketplace](https://prosus.dinova.cl)
