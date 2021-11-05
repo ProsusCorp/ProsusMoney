@@ -1,7 +1,7 @@
 
 # PROSUS MONEY
 
-<img src="http://prosus.money/wp-content/uploads/2021/03/splash.png">
+<img src="https://prosusmoney.cl/wp-content/uploads/2021/10/prosus-criptomoneda-chilena.png">
 
 Cryptocurrency created in Chile (2016) as a blockchain laboratory, for ordinary people as a target user. Low hardware requirement. This project promotes research on the resource-based economy.
 
