@@ -47,7 +47,7 @@ make
 
 ## :family: Community
 * [Facebook](https://www.facebook.com/groups/prosus.money)
-* [Telegram](https://t.me/prosus_money)
-* [Telegram (español)](https://t.me/prosus)
+* [Telegram](https://t.me/prosus)
+* [Telegram (español)](https://t.me/prosusmoney)
 * [Discord](https://discord.com/channels/748936986328301638/748981559599824998)
 * [Marketplace](https://prosus.dinova.cl)
