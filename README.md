@@ -40,13 +40,13 @@ make
 
 ----
 ## :star: Official web sites
-* [Home](http://prosus.money)
+* [Home](https://prosusmoney.cl)
 * [Block Explorer](http://explorer.prosus.money)
 * [Docs](http://wiki.prosus.money)
 * [Research and Technological Development](http://prosuscorp.com)
 
 ## :family: Community
-* [Facebook](https://www.facebook.com/groups/prosus.money)
+* [Facebook](https://www.facebook.com/groups/prosusmoney)
 * [Telegram](https://t.me/prosus)
 * [Telegram (español)](https://t.me/prosusmoney)
 * [Discord](https://discord.com/channels/748936986328301638/748981559599824998)
