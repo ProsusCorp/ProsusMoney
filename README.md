@@ -3,7 +3,7 @@
 
 <img src="https://prosusmoney.cl/wp-content/uploads/2021/10/prosus-criptomoneda-chilena.png">
 
-Cryptocurrency created in Chile (2016) as a blockchain laboratory, for ordinary people as a target user. Low hardware requirement. This project promotes research on the resource-based economy.
+Prosus Money is a cryptocurrency for R&D, founded in Chile in 2015. It stands out for its constant evolution and adaptation to the new needs of its user community.
 
 The Prosus Money ticker symbol is **xPR** or **PROSUS** .
 
