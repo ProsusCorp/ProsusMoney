@@ -18,13 +18,7 @@ make
 ----
 ## 1.2 💾 Build on Debian/Ubuntu
 
-If you don't have the Source repositories (Which is the Ubuntu Default) installed, you should execute:
-
-This is the repository for the C libboost libraries, needed to compile.
-
-```
-sudo add-apt-repository -s 'deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -sc) universe'
-```
+Boost 1.55 needs to be installed from source following the directions in this [page](https://www.boost.org/doc/libs/1_55_0/more/getting_started/unix-variants.html).
 
 Now we need like 300MB of the QT Graphical interface libraries
 
@@ -37,7 +31,7 @@ Then, do the following:
 (sudo)
 apt-get update
 apt-get upgrade
-apt-get install build-essential git cmake libboost-all-dev
+apt-get install build-essential git cmake
 git clone https://github.com/ProsusCorp/prosus.money.git
 ```
 
