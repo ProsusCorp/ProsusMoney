@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+    <class>FileDownloadFrame</class>
+    <widget class="QFrame" name="FileDownloadFrame">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>866</width>
+                <height>590</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>Frame</string>
+        </property>
+        <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="m_send_frame_main_layout">
+            <item>
+                <layout class="QGridLayout" name="gridLayout">
+                    <property name="topMargin">
+                        <number>5</number>
+                    </property>
+                    <item row="3" column="0">
+                        <widget class="QLabel" name="label_6">
+                            <property name="text">
+                                <string>View key:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="3" column="1" colspan="3">
+                        <widget class="QLineEdit" name="m_viewKey">
+                            <property name="maxLength">
+                                <number>64</number>
+                            </property>
+                            <property name="placeholderText">
+                                <string> </string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item row="4" column="0">
+                        <widget class="QLabel" name="label_6">
+                            <property name="text">
+                                <string>Address:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="4" column="1" colspan="3">
+                        <widget class="QLineEdit" name="m_address">
+                            <property name="maxLength">
+                                <number>101</number>
+                            </property>
+                            <property name="placeholderText">
+                                <string> </string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item row="5" column="0">
+                        <widget class="QLabel" name="label_6">
+                            <property name="text">
+                                <string>Timestamp:</string>
+                            </property>
+                        </widget>
+                    </item>
+                    <item row="5" column="1" colspan="3">
+                        <widget class="QLineEdit" name="m_timestamp">
+                            <property name="maxLength">
+                                <number>13</number>
+                            </property>
+                            <property name="placeholderText">
+                                <string>1674485030000</string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item row="6" column="1">
+                        <widget class="QPushButton" name="m_downloadButton">
+                            <property name="sizePolicy">
+                                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                                    <horstretch>0</horstretch>
+                                    <verstretch>0</verstretch>
+                                </sizepolicy>
+                            </property>
+                            <property name="maximumSize">
+                                <size>
+                                    <width>200</width>
+                                    <height>16777215</height>
+                                </size>
+                            </property>
+                            <property name="text">
+                                <string>Download</string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item row="1" column="2">
+                        <spacer name="horizontalSpacer">
+                            <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeType">
+                                <enum>QSizePolicy::Expanding</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                                <size>
+                                    <width>100</width>
+                                    <height>20</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </item>
+                </layout>
+            </item>
+        </layout>
+    </widget>
+    <tabstops>
+        <tabstop>m_viewKey</tabstop>
+    </tabstops>
+    <resources>
+        <include location="../../resources.qrc"/>
+    </resources>
+    <connections>
+        <connection>
+            <sender>m_downloadButton</sender>
+            <signal>clicked()</signal>
+            <receiver>FileDownloadFrame</receiver>
+            <slot>downloadClicked()</slot>
+            <hints>
+                <hint type="sourcelabel">
+                    <x>748</x>
+                    <y>497</y>
+                </hint>
+                <hint type="destinationlabel">
+                    <x>432</x>
+                    <y>294</y>
+                </hint>
+            </hints>
+        </connection>
+    </connections>
+    <slots>
+    </slots>
+</ui>

@@ -138,13 +138,14 @@ void MainWindow::initUi() {
   m_ui->m_transactionsFrame->hide();
   m_ui->m_addressBookFrame->hide();
   m_ui->m_miningFrame->hide();
+  m_ui->m_fileDownloadFrame->hide();
 
   m_tabActionGroup->addAction(m_ui->m_overviewAction);
   m_tabActionGroup->addAction(m_ui->m_sendAction);
   m_tabActionGroup->addAction(m_ui->m_receiveAction);
   m_tabActionGroup->addAction(m_ui->m_transactionsAction);
   m_tabActionGroup->addAction(m_ui->m_addressBookAction);
-
+  m_tabActionGroup->addAction(m_ui->m_fileDownloadAction);
 
   m_ui->m_overviewAction->toggle();
   encryptedFlagChanged(false);

@@ -123,7 +123,6 @@ void WalletAdapter::open(const QString& _password) {
 }
 
 void WalletAdapter::createWallet() {
-  Q_ASSERT(m_wallet == nullptr);
   Settings::instance().setEncrypted(false);
   Q_EMIT walletStateChangedSignal(tr("Creating wallet"));
   m_wallet = NodeAdapter::instance().createWallet();
