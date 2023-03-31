@@ -67,10 +67,7 @@ namespace WalletGui {
         auto private_view_key_string = m_ui->m_trackingKey->text().toStdString();
         CryptoNote::AccountKeys keys;
         this->readKeys(m_ui->m_trackingKey->text(), keys);
-
-        //auto wallet_green = createWallet(keys.address);
         auto address = keys.address;
-
 
         LoggerManager logManager;
         Logging::ILogger &m_loggerGroup(logManager);
@@ -94,7 +91,6 @@ namespace WalletGui {
 
         std::promise<std::error_code> errorPromise;
         std::future<std::error_code> f_error = errorPromise.get_future();
-        std::cout << NodeAdapter::instance().getDaemonHost() << std::endl;
         std::unique_ptr<CryptoNote::INode> node(
                 new CryptoNote::NodeRpcProxy(
                         NodeAdapter::instance().getDaemonHost(),
