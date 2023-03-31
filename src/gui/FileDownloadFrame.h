@@ -9,6 +9,7 @@
 #include <IWallet.h>
 #include <IWalletLegacy.h>
 #include "SendGlassFrame.h"
+#include "Wallet/WalletGreen.h"
 
 namespace Ui {
     class FileDownloadFrame;
@@ -30,12 +31,9 @@ namespace WalletGui {
     private:
         QScopedPointer<Ui::FileDownloadFrame> m_ui;
         QList<TransferFrame*> m_transfers;
-        AddressProvider* m_addressProvider;
         SendGlassFrame* m_glassFrame;
 
-        QString remote_node_fee_address;
-        quint64 remote_node_fee;
-        quint64 total_amount;
+        void readKeys(QString trackingKey, CryptoNote::AccountKeys &keys);
 
         Q_SLOT void downloadClicked();
 

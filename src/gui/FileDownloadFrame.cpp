@@ -2,6 +2,7 @@
 // Copyleft (c) 2016-2018, Prosus Corp RTD
 // Distributed under the MIT/X11 software license
 
+#include <QMessageBox>
 #include "AddressBookModel.h"
 #include "CurrencyAdapter.h"
 #include "NodeAdapter.h"
@@ -33,19 +34,9 @@ using Common::JsonValue;
 namespace WalletGui {
 
     FileDownloadFrame::FileDownloadFrame(QWidget *_parent) : QFrame(_parent), m_ui(new Ui::FileDownloadFrame),
-                                                             m_addressProvider(new AddressProvider(this)),
                                                              m_glassFrame(new SendGlassFrame(nullptr)) {
         m_ui->setupUi(this);
         m_glassFrame->setObjectName("m_sendGlassFrame");
-        remote_node_fee = 0;
-
-//  connect(&WalletAdapter::instance(), &WalletAdapter::walletSynchronizationProgressUpdatedSignal,
-//    this, &FileDownloadFrame::walletSynchronizationInProgress, Qt::QueuedConnection);
-
-//  QRegExp hexMatcher("^[0-9A-F]{64}$", Qt::CaseInsensitive);
-//  QValidator *validator = new QRegExpValidator(hexMatcher, this);
-//  m_ui->m_paymentIdEdit->setValidator(validator);
-
     }
 
     FileDownloadFrame::~FileDownloadFrame() {
@@ -53,10 +44,6 @@ namespace WalletGui {
         m_glassFrame->deleteLater();
     }
 
-//void FileDownloadFrame::walletSynchronizationInProgress(quint64 _current, quint64 _total) {
-//  m_glassFrame->install(this);
-//  m_glassFrame->updateSynchronizationState(_current, _total);
-//}
     JsonValue buildLoggerConfiguration(Level level, const std::string &logfile) {
         JsonValue loggerConfiguration(JsonValue::OBJECT);
         loggerConfiguration.insert("globalLevel", static_cast<int64_t>(level));
@@ -77,9 +64,13 @@ namespace WalletGui {
     }
 
     void FileDownloadFrame::downloadClicked() {
-        auto private_view_key_string = m_ui->m_viewKey->text().toStdString();
-        auto address = m_ui->m_address->text().toStdString();
-        auto creationTimestamp = m_ui->m_timestamp->text().toStdString();
+        auto private_view_key_string = m_ui->m_trackingKey->text().toStdString();
+        CryptoNote::AccountKeys keys;
+        this->readKeys(m_ui->m_trackingKey->text(), keys);
+
+        //auto wallet_green = createWallet(keys.address);
+        auto address = keys.address;
+
 
         LoggerManager logManager;
         Logging::ILogger &m_loggerGroup(logManager);
@@ -103,16 +94,33 @@ namespace WalletGui {
 
         std::promise<std::error_code> errorPromise;
         std::future<std::error_code> f_error = errorPromise.get_future();
-        //std::unique_ptr<CryptoNote::INode> node(new CryptoNote::NodeRpcProxy("seed01.prosus.money", 16181));
-        std::unique_ptr<CryptoNote::INode> node(new CryptoNote::NodeRpcProxy("localhost", 16181));
+        std::cout << NodeAdapter::instance().getDaemonHost() << std::endl;
+        std::unique_ptr<CryptoNote::INode> node(
+                new CryptoNote::NodeRpcProxy(
+                        NodeAdapter::instance().getDaemonHost(),
+                        NodeAdapter::instance().getDaemonPort()));
         auto callback = [&errorPromise](std::error_code e) { errorPromise.set_value(e); };
         node->init(callback);
         auto currency = CryptoNote::CurrencyBuilder(logManager).currency();
 
-        CryptoNote::AccountPublicAddress publicKeys;
-        currency.parseAccountAddressString(address, publicKeys);
+        auto addressString = currency.accountAddressAsString(address);
 
-        auto wallet_green = new CryptoNote::WalletGreen(dispatcher, currency, *node, logManager, 1);
+        CryptoNote::AccountPublicAddress publicKeys;
+        currency.parseAccountAddressString(
+                addressString,
+                publicKeys);
+
+        Logging::LoggerRef logger = Logging::LoggerRef(logManager, "FileDownload");
+        logger(DEBUGGING) << "Initalizing Wallet with address: " << addressString;
+
+        auto wallet_green = new CryptoNote::WalletGreen(
+                dispatcher,
+                currency,
+                *node,
+                logManager,
+                1);
+
+
         wallet_green->start();
 
         boost::uuids::uuid uuid = boost::uuids::random_generator()();
@@ -120,19 +128,21 @@ namespace WalletGui {
 
         Crypto::Hash private_view_key_hash;
         Common::podFromHex(private_view_key_string, private_view_key_hash);
-        Crypto::SecretKey private_view_key  = *(struct Crypto::SecretKey*) &private_view_key_hash;
-        auto creationTimestampInt = strtoll(creationTimestamp.c_str(), NULL, 10);
+        Crypto::SecretKey private_view_key = *(struct Crypto::SecretKey *) &private_view_key_hash;
+        //auto creationTimestampInt = strtoll(creationTimestamp.c_str(), NULL, 10);
+        int creationTimestampInt = 0L;
 
         wallet_green->initializeWithViewKeyAndTimestamp(
                 path,
                 "", //password
                 private_view_key,
-                creationTimestampInt
-                );
+                creationTimestampInt);
+        //wallet_green->load("/tmp/wallet_8814561e-e95e-481d-895c-f55f0b1a9ce9.wallet", "");
 
-        wallet_green->doCreateAddress(publicKeys.spendPublicKey, CryptoNote::NULL_SECRET_KEY, creationTimestampInt);
-
-        std::cout << "Address: " << address << std::endl;
+        wallet_green->doCreateAddress(
+                keys.address.spendPublicKey,
+                CryptoNote::NULL_SECRET_KEY,
+                creationTimestampInt);
 
         for (;;) {
             wallet_green->save();
@@ -146,6 +156,59 @@ namespace WalletGui {
             auto event = wallet_green->getEvent();
             std::cout << "Received event: " << event.type << std::endl;
         }
+    }
+
+    /**
+     * Reads and parses a tracking key from the UI
+     * @param trackingKey
+     * @param keys
+     */
+    void FileDownloadFrame::readKeys(QString trackingKey, CryptoNote::AccountKeys &keys) {
+        std::string public_spend_key_string = trackingKey.mid(0, 64).toStdString();
+        std::string public_view_key_string = trackingKey.mid(64, 64).toStdString();
+        std::string private_spend_key_string = trackingKey.mid(128, 64).toStdString();
+        std::string private_view_key_string = trackingKey.mid(192, 64).toStdString();
+
+        Crypto::Hash public_spend_key_hash;
+        Crypto::Hash public_view_key_hash;
+        Crypto::Hash private_spend_key_hash;
+        Crypto::Hash private_view_key_hash;
+
+        size_t size;
+        if (!Common::fromHex(public_spend_key_string, &public_spend_key_hash, sizeof(public_spend_key_hash), size) ||
+            size != sizeof(public_spend_key_hash)) {
+            QMessageBox::warning(this, tr("Key is not valid"), tr("The public spend key you entered is not valid."),
+                                 QMessageBox::Ok);
+            return;
+        } else if (
+                !Common::fromHex(public_view_key_string, &public_view_key_hash, sizeof(public_view_key_hash), size) ||
+                size != sizeof(public_view_key_hash)) {
+            QMessageBox::warning(this, tr("Key is not valid"), tr("The public view key you entered is not valid."),
+                                 QMessageBox::Ok);
+            return;
+        }
+        if (!Common::fromHex(private_spend_key_string, &private_spend_key_hash, sizeof(private_spend_key_hash), size) ||
+            size != sizeof(private_spend_key_hash)) {
+            QMessageBox::warning(this, tr("Key is not valid"), tr("The private spend key you entered is not valid."),
+                                 QMessageBox::Ok);
+            return;
+        }
+        if (!Common::fromHex(private_view_key_string, &private_view_key_hash, sizeof(private_view_key_hash), size) ||
+            size != sizeof(private_spend_key_hash)) {
+            QMessageBox::warning(this, tr("Key is not valid"), tr("The private view key you entered is not valid."),
+                                 QMessageBox::Ok);
+            return;
+        }
+
+        Crypto::PublicKey public_spend_key = *(struct Crypto::PublicKey *) &public_spend_key_hash;
+        Crypto::PublicKey public_view_key = *(struct Crypto::PublicKey *) &public_view_key_hash;
+        Crypto::SecretKey private_spend_key = *(struct Crypto::SecretKey *) &private_spend_key_hash;
+        Crypto::SecretKey private_view_key = *(struct Crypto::SecretKey *) &private_view_key_hash;
+
+        keys.address.spendPublicKey = public_spend_key;
+        keys.address.viewPublicKey = public_view_key;
+        keys.spendSecretKey = private_spend_key;
+        keys.viewSecretKey = private_view_key;
     }
 
 }
