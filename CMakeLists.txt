@@ -55,6 +55,7 @@ set(CRYPTONOTE_SOURCES
   cli/src/Common/ConsoleTools.cpp
   cli/src/Common/MemoryInputStream.cpp
   cli/src/Common/PathTools.cpp
+  cli/src/Common/ScopeExit.cpp
   cli/src/Common/StdInputStream.cpp
   cli/src/Common/StdOutputStream.cpp
   cli/src/Common/StreamTools.cpp
@@ -124,6 +125,7 @@ set(CRYPTONOTE_SOURCES
   cli/src/Wallet/LegacyKeysImporter.cpp
   cli/src/Wallet/WalletAsyncContextCounter.cpp
   cli/src/Wallet/WalletErrors.cpp
+  cli/src/Wallet/WalletGreen.cpp
   cli/src/Wallet/WalletSerializationV1.cpp
   cli/src/Wallet/WalletSerializationV2.cpp
   cli/src/Wallet/WalletUtils.cpp
@@ -164,6 +166,7 @@ set(CRYPTONOTE_SOURCES
   cli/src/BlockchainExplorer/BlockchainExplorer.cpp
   cli/src/BlockchainExplorer/BlockchainExplorerDataBuilder.cpp
   cli/src/BlockchainExplorer/BlockchainExplorerErrors.cpp
+  cli/src/Platform/Posix/System/MemoryMappedFile.cpp
 )
 
 file(GLOB_RECURSE SOURCES src/*.cpp)

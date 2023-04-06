@@ -60,6 +60,9 @@ public:
   void stopSoloMining();
   quint64 getSpeed() const;
 
+  std::string getDaemonHost();
+  int getDaemonPort();
+
 private:
   Node* m_node;
   QThread m_nodeInitializerThread;
@@ -71,6 +74,9 @@ private:
   bool initInProcessNode();
   CryptoNote::CoreConfig makeCoreConfig() const;
   CryptoNote::NetNodeConfig makeNetNodeConfig() const;
+
+  std::string m_daemonHost;
+  int m_daemonPort;
 
 Q_SIGNALS:
   void localBlockchainUpdatedSignal(quint64 _height);
