@@ -41,8 +41,8 @@ make
 ----
 ## :star: Official web sites
 * [Home](https://prosusmoney.cl)
-* [Block Explorer](http://explorer.prosus.money)
-* [Docs](http://wiki.prosus.money)
+* [Block Explorer](http://186.64.120.70)
+* [Docs](https://prosusmoney.cl/wiki)
 * [Research and Technological Development](http://prosuscorp.com)
 
 ## :family: Community
@@ -50,4 +50,4 @@ make
 * [Telegram](https://t.me/prosus)
 * [Telegram (español)](https://t.me/prosusmoney)
 * [Discord](https://discord.com/channels/748936986328301638/748981559599824998)
-* [Marketplace](https://prosus.dinova.cl)
+* [Marketplace](https://libreriadinova.blogspot.com/2014/02/aceptamos-bitcoin.html)
